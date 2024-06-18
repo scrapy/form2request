@@ -10,7 +10,7 @@ form2request
    :target: https://pypi.python.org/pypi/form2request
    :alt: Supported Python Versions
 
-.. image:: https://github.com/scrapy/form2request/workflows/test/badge.svg
+.. image:: https://github.com/scrapy/form2request/workflows/tox/badge.svg
    :target: https://github.com/scrapy/form2request/actions
    :alt: Build Status
 
