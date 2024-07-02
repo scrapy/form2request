@@ -9,9 +9,7 @@ extensions = [
 
 html_theme = "sphinx_rtd_theme"
 
-intersphinx_disabled_reftypes = [
-    "lxml.etree.FormElement",
-]
+intersphinx_disabled_reftypes = []
 intersphinx_mapping = {
     "lxml": ("https://lxml.de/apidoc/", None),
     "parsel": ("https://parsel.readthedocs.io/en/stable", None),
