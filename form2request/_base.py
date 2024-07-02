@@ -8,6 +8,7 @@ from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
     from lxml.etree import Element  # nosec
+    from lxml.html import HtmlElement  # nosec
     from lxml.html import FormElement  # nosec
     from lxml.html import InputElement  # nosec
     from lxml.html import MultipleSelectOptions  # nosec
@@ -49,18 +50,18 @@ def _select_value(
     return n, v
 
 
-def _url(form: FormElement) -> str:
+def _url(form: FormElement, click_element: Optional[HtmlElement]) -> str:
     if form.base_url is None:
         raise ValueError(f"{form} has no base_url set.")
-    action = form.get("action")
+    action = (click_element.get("formaction") if click_element else None) or form.get("action")
     if action is None:
         return form.base_url
     return urljoin(form.base_url, strip_html5_whitespace(action))
 
 
-def _method(form: FormElement) -> str:
-    method = form.method
-    assert method is not None
+def _method(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+    method = (click_element.get("formmethod") if click_element else None) or form.method
+    assert method is not None  # lxml’s form.method is always filled
     method = method.upper()
     if method not in {"GET", "POST"}:
         method = "GET"
@@ -71,11 +72,11 @@ class _NoClickables(ValueError):
     pass
 
 
-def _click_data(
+def _click_element(
     form: FormElement, click: None | bool | Element
-) -> tuple[()] | tuple[str, str]:
+) -> Optional[HtmlElement]:
     if click is False:
-        return ()
+        return None
     if click in {None, True}:
         clickables = list(
             form.xpath(
@@ -88,15 +89,15 @@ def _click_data(
             if click:
                 raise _NoClickables
             else:
-                return ()
+                return None
         click = clickables[0]
-    return click.get("name"), click.get("value")
+    return click
 
 
-def _data(data: FormdataType, click_data: tuple[()] | tuple[str, str]) -> FormdataType:
+def _data(data: FormdataType, click_element: Optional[HtmlElement]) -> FormdataType:
     data = data or {}
-    if click_data:
-        assert len(click_data) == 2
+    if click_element and (name := click_element.get("name")):
+        click_data = (name, click_element.get("value"))
         if isinstance(data, dict):
             data = dict(data)
             data[click_data[0]] = click_data[1]
@@ -180,16 +181,26 @@ def request_from_form(
         On forms with multiple submission elements, specifying the right
         submission element here may be necessary.
     """
-    url = _url(form)
-    method = _method(form)
+    if form.get("enctype") == "multipart/form-data":
+        raise NotImplementedError(
+            f"{form} has enctype set to multipart/form-data, which "
+            f"form2request does not currently support."
+        )
     try:
-        click_data = _click_data(form, click)
+        click_element = _click_element(form, click)
     except _NoClickables:
         raise ValueError(
             f"No clickable elements found in form {form}. Set click=False or "
             f"point it to the element to be clicked."
         )
-    data = _data(data, click_data)
+    if click_element and click_element.get("formenctype") == "multipart/form-data":
+        raise NotImplementedError(
+            f"{click_element} has formenctype set to multipart/form-data, "
+            f"which form2request does not currently support."
+        )
+    url = _url(form, click_element)
+    method = _method(form, click_element)
+    data = _data(data, click_element)
     query = _query(form, data)
     headers = []
     body = b""
