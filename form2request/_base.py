@@ -192,7 +192,7 @@ def request_from_form(
         raise ValueError(
             f"No clickable elements found in form {form}. Set click=False or "
             f"point it to the element to be clicked."
-        )
+        ) from None
     if click_element and click_element.get("formenctype") == "multipart/form-data":
         raise NotImplementedError(
             f"{click_element} has formenctype set to multipart/form-data, "
