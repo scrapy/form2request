@@ -34,24 +34,36 @@ def _url(form: FormElement, click_element: HtmlElement | None) -> str:
     return urljoin(form.base_url, strip_html5_whitespace(action))
 
 
-def _method(form: FormElement, click_element: HtmlElement | None) -> str:
-    method = None
-    if click_element is not None:
-        method = click_element.get("formmethod")
+USER = object()
+
+
+def _method(
+    form: FormElement, click_element: HtmlElement | None, method: None | str
+) -> str:
     if method:
-        method_src = click_element
+        method_src = USER
     else:
-        method = form.method
-        method_src = form
-    assert method is not None  # lxml’s form.method is always filled
-    upper_method = method.upper()
-    if upper_method not in {"GET", "POST"}:
-        attribute = "formmethod" if method_src is click_element else "method"
-        raise NotImplementedError(
-            f"form2request does not support the {attribute} attribute of "
-            f"{method_src}: {method!r}"
-        )
-    return upper_method
+        if click_element is not None:
+            method = click_element.get("formmethod")
+        if method:
+            method_src = click_element
+        else:
+            method = form.method
+            assert method is not None  # lxml’s form.method is always filled
+            method_src = form
+    method = method.upper()
+    if method not in {"GET", "POST"}:
+        if method_src is USER:
+            raise ValueError(
+                f"The specified form method ({method!r}) is not supported."
+            )
+        if method_src is click_element:
+            raise NotImplementedError(
+                f"Found unsupported form method {method!r} in the formmethod "
+                f"attribute of the submission button."
+            )
+        raise NotImplementedError(f"Found unsupported form method {method!r}.")
+    return method
 
 
 class _NoClickables(ValueError):
@@ -137,6 +149,7 @@ def request_from_form(
     /,
     *,
     click: None | bool | HtmlElement = None,
+    method: None | str = None,
 ) -> Request:
     """Return a form submission request.
 
@@ -188,7 +201,7 @@ def request_from_form(
             f"not currently support."
         )
     url = _url(form, click_element)
-    method = _method(form, click_element)
+    method = _method(form, click_element, method)
     data = _data(data, click_element)
     query = _query(form, data)
     headers = []

@@ -123,6 +123,25 @@ To remove a field value, set it to ``None``:
 >>> request_from_form(form, {"foo": None})
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
+By default, if a form uses an unsupported method:
+
+>>> html = b"""<form method="foo"></form>"""
+>>> root = fromstring(html, base_url="https://example.com")
+>>> form = root.xpath("//form")[0]
+
+A :exc:`NotImplementedError` exception will be raised:
+
+>>> request_from_form(form)
+Traceback (most recent call last):
+...
+NotImplementedError: Found unsupported form method 'FOO'.
+
+If the reason for the bad method is that the right method is set through
+JavaScript code, you can use the ``method`` parameter to set the right value:
+
+>>> request_from_form(form, method="GET")
+Request(url='https://example.com', method='GET', headers=[], body=b'')
+
 
 .. _click:
 
