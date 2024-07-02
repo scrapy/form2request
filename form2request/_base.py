@@ -7,8 +7,8 @@ from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
-    from lxml.html import HtmlElement  # nosec
     from lxml.html import FormElement  # nosec
+    from lxml.html import HtmlElement  # nosec
     from lxml.html import InputElement  # nosec
     from lxml.html import MultipleSelectOptions  # nosec
     from lxml.html import SelectElement  # nosec
@@ -49,16 +49,18 @@ def _select_value(
     return n, v
 
 
-def _url(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+def _url(form: FormElement, click_element: HtmlElement | None) -> str:
     if form.base_url is None:
         raise ValueError(f"{form} has no base_url set.")
-    action = (click_element.get("formaction") if click_element else None) or form.get("action")
+    action = (click_element.get("formaction") if click_element else None) or form.get(
+        "action"
+    )
     if action is None:
         return form.base_url
     return urljoin(form.base_url, strip_html5_whitespace(action))
 
 
-def _method(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+def _method(form: FormElement, click_element: HtmlElement | None) -> str:
     method = (click_element.get("formmethod") if click_element else None) or form.method
     assert method is not None  # lxml’s form.method is always filled
     method = method.upper()
@@ -73,7 +75,7 @@ class _NoClickables(ValueError):
 
 def _click_element(
     form: FormElement, click: None | bool | HtmlElement
-) -> Optional[HtmlElement]:
+) -> HtmlElement | None:
     if click is False:
         return None
     if click in {None, True}:
@@ -93,7 +95,7 @@ def _click_element(
     return click
 
 
-def _data(data: FormdataType, click_element: Optional[HtmlElement]) -> FormdataType:
+def _data(data: FormdataType, click_element: HtmlElement | None) -> FormdataType:
     data = data or {}
     if click_element and (name := click_element.get("name")):
         click_data = (name, click_element.get("value"))

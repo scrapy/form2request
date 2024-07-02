@@ -22,9 +22,9 @@ nitpick_ignore = [
         ("py:class", cls)
         for cls in (
             # https://github.com/sphinx-doc/sphinx/issues/11225
-            "Element",
             "FormdataType",
             "FormElement",
+            "HtmlElement",
         )
     ),
 ]
