@@ -109,6 +109,20 @@ iterable of key-value tuples:
 >>> request_from_form(form, (("foo", "bar"), ("foo", "baz")))
 Request(url='https://example.com?foo=bar&foo=baz', method='GET', headers=[], body=b'')
 
+Sometimes, you might want to prevent a value from a field from being included
+in the generated request data. For example, because the field is removed or
+disabled through JavaScript, or because the field or a parent element has the
+``disabled`` attribute (currently not supported by form2request):
+
+>>> html = b"""<form><input name="foo" value="bar" disabled /></form>"""
+>>> root = fromstring(html, base_url="https://example.com")
+>>> form = root.xpath("//form")[0]
+
+To remove a field value, set it to ``None``:
+
+>>> request_from_form(form, {"foo": None})
+Request(url='https://example.com', method='GET', headers=[], body=b'')
+
 
 .. _click:
 

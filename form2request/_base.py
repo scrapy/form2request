@@ -27,46 +27,33 @@ def _is_listlike(x: Any) -> bool:
     return hasattr(x, "__iter__") and not isinstance(x, (str, bytes))
 
 
-def _value(
-    ele: InputElement | SelectElement | TextareaElement,
-) -> tuple[str | None, None | str | MultipleSelectOptions]:
-    n = ele.name
-    v = ele.value
-    if ele.tag == "select":
-        return _select_value(cast("SelectElement", ele), n, v)
-    return n, v
-
-
-def _select_value(
-    ele: SelectElement, n: str | None, v: None | str | MultipleSelectOptions
-) -> tuple[str | None, None | str | MultipleSelectOptions]:
-    multiple = ele.multiple
-    if v is None and not multiple:
-        # Match browser behavior on simple select tag without options selected
-        # And for select tags without options
-        o = ele.value_options
-        return (n, o[0]) if o else (None, None)
-    return n, v
-
-
-def _url(form: FormElement, click_element: HtmlElement | None) -> str:
+def _url(form: FormElement, click_element: Optional[HtmlElement]) -> str:
     if form.base_url is None:
         raise ValueError(f"{form} has no base_url set.")
-    action = (click_element.get("formaction") if click_element else None) or form.get(
-        "action"
-    )
+    action = (click_element.get("formaction") if click_element is not None else None) or form.get("action")
     if action is None:
         return form.base_url
     return urljoin(form.base_url, strip_html5_whitespace(action))
 
 
-def _method(form: FormElement, click_element: HtmlElement | None) -> str:
-    method = (click_element.get("formmethod") if click_element else None) or form.method
+def _method(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+    method = None
+    if click_element is not None:
+        method = click_element.get("formmethod")
+    if method:
+        method_src = click_element
+    else:
+        method = form.method
+        method_src = form
     assert method is not None  # lxml’s form.method is always filled
-    method = method.upper()
-    if method not in {"GET", "POST"}:
-        method = "GET"
-    return method
+    upper_method = method.upper()
+    if upper_method not in {"GET", "POST"}:
+        attribute = "formmethod" if method_src is click_element else "method"
+        raise NotImplementedError(
+            f"form2request does not support the {attribute} attribute of "
+            f"{method_src}: {method!r}"
+        )
+    return upper_method
 
 
 class _NoClickables(ValueError):
@@ -75,7 +62,7 @@ class _NoClickables(ValueError):
 
 def _click_element(
     form: FormElement, click: None | bool | HtmlElement
-) -> HtmlElement | None:
+) -> Optional[HtmlElement]:
     if click is False:
         return None
     if click in {None, True}:
@@ -95,9 +82,9 @@ def _click_element(
     return click
 
 
-def _data(data: FormdataType, click_element: HtmlElement | None) -> FormdataType:
+def _data(data: FormdataType, click_element: Optional[HtmlElement]) -> FormdataType:
     data = data or {}
-    if click_element and (name := click_element.get("name")):
+    if click_element is not None and (name := click_element.get("name")):
         click_data = (name, click_element.get("value"))
         if isinstance(data, dict):
             data = dict(data)
@@ -123,7 +110,7 @@ def _query(form: FormElement, data: FormdataType) -> str:
     )
     values: list[FormdataKVType] = [
         (k, "" if v is None else v)
-        for k, v in (_value(e) for e in inputs)
+        for k, v in ((e.name, e.value) for e in inputs)
         if k and k not in keys
     ]
     items = data.items() if isinstance(data, dict) else data
@@ -182,11 +169,6 @@ def request_from_form(
         On forms with multiple submission elements, specifying the right
         submission element here may be necessary.
     """
-    if form.get("enctype") == "multipart/form-data":
-        raise NotImplementedError(
-            f"{form} has enctype set to multipart/form-data, which "
-            f"form2request does not currently support."
-        )
     try:
         click_element = _click_element(form, click)
     except _NoClickables:
@@ -194,10 +176,16 @@ def request_from_form(
             f"No clickable elements found in form {form}. Set click=False or "
             f"point it to the element to be clicked."
         ) from None
-    if click_element and click_element.get("formenctype") == "multipart/form-data":
+    if click_element is not None and (enctype := click_element.get("formenctype")):
+        if enctype != "application/x-www-form-urlencoded":
+            raise NotImplementedError(
+                f"{click_element} has formenctype set to {enctype!r}, which "
+                f"form2request does not currently support."
+            )
+    elif (enctype := form.get("enctype")) and enctype != "application/x-www-form-urlencoded":
         raise NotImplementedError(
-            f"{click_element} has formenctype set to multipart/form-data, "
-            f"which form2request does not currently support."
+            f"{form} has enctype set to {enctype!r}, which form2request does "
+            f"not currently support."
         )
     url = _url(form, click_element)
     method = _method(form, click_element)
