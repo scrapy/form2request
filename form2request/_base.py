@@ -9,10 +9,6 @@ from w3lib.html import strip_html5_whitespace
 if TYPE_CHECKING:
     from lxml.html import FormElement  # nosec
     from lxml.html import HtmlElement  # nosec
-    from lxml.html import InputElement  # nosec
-    from lxml.html import MultipleSelectOptions  # nosec
-    from lxml.html import SelectElement  # nosec
-    from lxml.html import TextareaElement  # nosec
 
 FormdataVType = Union[str, Iterable[str]]
 FormdataKVType = Tuple[str, FormdataVType]
@@ -27,16 +23,18 @@ def _is_listlike(x: Any) -> bool:
     return hasattr(x, "__iter__") and not isinstance(x, (str, bytes))
 
 
-def _url(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+def _url(form: FormElement, click_element: HtmlElement | None) -> str:
     if form.base_url is None:
         raise ValueError(f"{form} has no base_url set.")
-    action = (click_element.get("formaction") if click_element is not None else None) or form.get("action")
+    action = (
+        click_element.get("formaction") if click_element is not None else None
+    ) or form.get("action")
     if action is None:
         return form.base_url
     return urljoin(form.base_url, strip_html5_whitespace(action))
 
 
-def _method(form: FormElement, click_element: Optional[HtmlElement]) -> str:
+def _method(form: FormElement, click_element: HtmlElement | None) -> str:
     method = None
     if click_element is not None:
         method = click_element.get("formmethod")
@@ -62,7 +60,7 @@ class _NoClickables(ValueError):
 
 def _click_element(
     form: FormElement, click: None | bool | HtmlElement
-) -> Optional[HtmlElement]:
+) -> HtmlElement | None:
     if click is False:
         return None
     if click in {None, True}:
@@ -82,7 +80,7 @@ def _click_element(
     return click
 
 
-def _data(data: FormdataType, click_element: Optional[HtmlElement]) -> FormdataType:
+def _data(data: FormdataType, click_element: HtmlElement | None) -> FormdataType:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
         click_data = (name, click_element.get("value"))
@@ -182,7 +180,9 @@ def request_from_form(
                 f"{click_element} has formenctype set to {enctype!r}, which "
                 f"form2request does not currently support."
             )
-    elif (enctype := form.get("enctype")) and enctype != "application/x-www-form-urlencoded":
+    elif (
+        enctype := form.get("enctype")
+    ) and enctype != "application/x-www-form-urlencoded":
         raise NotImplementedError(
             f"{form} has enctype set to {enctype!r}, which form2request does "
             f"not currently support."

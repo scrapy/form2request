@@ -3,6 +3,7 @@ from lxml.html import fromstring
 
 from form2request import Request, request_from_form
 
+
 @pytest.mark.parametrize(
     ("base_url", "html", "data", "click", "expected"),
     (
@@ -194,7 +195,8 @@ from form2request import Request, request_from_form
         # default.
         (
             "https://example.com",
-            b"""<form><input type="submit" name="a" value="b" /><input type="submit" name="a" value="c" /></form>""",
+            b"""<form><input type="submit" name="a" value="b" />
+            <input type="submit" name="a" value="c" /></form>""",
             None,
             None,
             Request(
@@ -207,7 +209,8 @@ from form2request import Request, request_from_form
         # You can force a specific submit button to be used.
         (
             "https://example.com",
-            b"""<form><input type="submit" name="a" value="b" /><input type="submit" name="a" value="c" /></form>""",
+            b"""<form><input type="submit" name="a" value="b" />
+            <input type="submit" name="a" value="c" /></form>""",
             None,
             './/*[@value="c"]',
             Request(
@@ -255,7 +258,8 @@ from form2request import Request, request_from_form
         # The formenctype from the submit button is taken into account.
         (
             "https://example.com",
-            b"""<form enctype="foo"><input type="submit" formenctype="application/x-www-form-urlencoded" /></form>""",
+            b"""<form enctype="foo"><input type="submit"
+            formenctype="application/x-www-form-urlencoded" /></form>""",
             None,
             None,
             Request(
@@ -269,7 +273,8 @@ from form2request import Request, request_from_form
         # submit button sets a supported one.
         (
             "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded"><input type="submit" formenctype="foo" /></form>""",
+            b"""<form enctype="application/x-www-form-urlencoded"><input
+            type="submit" formenctype="foo" /></form>""",
             None,
             None,
             NotImplementedError,
@@ -466,11 +471,12 @@ from form2request import Request, request_from_form
                 [],
                 b"",
             ),
-            marks=pytest.mark.xfail(reason='No disabled support')
+            marks=pytest.mark.xfail(reason="No disabled support"),
         ),
         pytest.param(
             "https://example.com",
-            b"""<form><fieldset disabled><input name="a" value="b"></fieldset></form>""",
+            b"""<form><fieldset disabled><input name="a" value="b">
+            </fieldset></form>""",
             None,
             None,
             Request(
@@ -479,7 +485,7 @@ from form2request import Request, request_from_form
                 [],
                 b"",
             ),
-            marks=pytest.mark.xfail(reason='No disabled support')
+            marks=pytest.mark.xfail(reason="No disabled support"),
         ),
         # Single-choice select with a single option.
         (
@@ -511,7 +517,8 @@ from form2request import Request, request_from_form
         # selected.
         (
             "https://example.com",
-            b"""<form><select name="a"><option value="b">B</option><option value="c">C</option></select></form>""",
+            b"""<form><select name="a"><option value="b">B</option>
+            <option value="c">C</option></select></form>""",
             None,
             None,
             Request(
@@ -524,7 +531,8 @@ from form2request import Request, request_from_form
         # Single-choice select with multiple options, one of which is selected.
         (
             "https://example.com",
-            b"""<form><select name="a"><option value="b">B</option><option selected value="c">C</option></select></form>""",
+            b"""<form><select name="a"><option value="b">B</option>
+            <option selected value="c">C</option></select></form>""",
             None,
             None,
             Request(
@@ -538,7 +546,8 @@ from form2request import Request, request_from_form
         # selected.
         (
             "https://example.com",
-            b"""<form><select multiple name="a"><option value="b">B</option><option value="c">C</option></select></form>""",
+            b"""<form><select multiple name="a"><option value="b">B</option>
+            <option value="c">C</option></select></form>""",
             None,
             None,
             Request(
@@ -552,7 +561,8 @@ from form2request import Request, request_from_form
         # selected.
         (
             "https://example.com",
-            b"""<form><select multiple name="a"><option value="b">B</option><option value="c" selected>C</option></select></form>""",
+            b"""<form><select multiple name="a"><option value="b">B</option>
+            <option value="c" selected>C</option></select></form>""",
             None,
             None,
             Request(
@@ -566,7 +576,8 @@ from form2request import Request, request_from_form
         # selected.
         (
             "https://example.com",
-            b"""<form><select multiple name="a"><option value="b" selected>B</option><option value="c" selected>C</option></select></form>""",
+            b"""<form><select multiple name="a"><option value="b" selected>B</option>
+            <option value="c" selected>C</option></select></form>""",
             None,
             None,
             Request(
