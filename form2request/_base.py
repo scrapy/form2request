@@ -7,7 +7,6 @@ from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
-    from lxml.etree import Element  # nosec
     from lxml.html import HtmlElement  # nosec
     from lxml.html import FormElement  # nosec
     from lxml.html import InputElement  # nosec
@@ -73,7 +72,7 @@ class _NoClickables(ValueError):
 
 
 def _click_element(
-    form: FormElement, click: None | bool | Element
+    form: FormElement, click: None | bool | HtmlElement
 ) -> Optional[HtmlElement]:
     if click is False:
         return None
@@ -150,7 +149,7 @@ def request_from_form(
     data: FormdataType = None,
     /,
     *,
-    click: None | bool | Element = None,
+    click: None | bool | HtmlElement = None,
 ) -> Request:
     """Return a form submission request.
 
