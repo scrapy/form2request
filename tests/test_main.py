@@ -446,16 +446,64 @@ from form2request import Request, form2request
                 b"a=b",
             ),
         ),
-        # Unsupported methods trigger a NotImplementedError, but only if they
-        # are the actual method to be used, e.g. not if overridden by a
-        # supported method.
+        # The dialog method triggers a NotImplementedError, but only if it is
+        # the actual method to be used, e.g. not if overridden by another
+        # method.
+        (
+            "https://example.com",
+            b"""<form method="dialog"></form>""",
+            None,
+            None,
+            None,
+            NotImplementedError,
+        ),
+        (
+            "https://example.com",
+            b"""<form><button formmethod="dialog" /></form>""",
+            None,
+            None,
+            None,
+            NotImplementedError,
+        ),
+        (
+            "https://example.com",
+            b"""<form method="dialog"><button formmethod="get" /></form>""",
+            None,
+            None,
+            None,
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        (
+            "https://example.com",
+            b"""<form method="dialog"><button formmethod="a" /></form>""",
+            None,
+            None,
+            None,
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # Unknown methods are replaced with GET, and can override.
         (
             "https://example.com",
             b"""<form method="a"></form>""",
             None,
             None,
             None,
-            NotImplementedError,
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
         ),
         (
             "https://example.com",
@@ -463,11 +511,16 @@ from form2request import Request, form2request
             None,
             None,
             None,
-            NotImplementedError,
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
         ),
         (
             "https://example.com",
-            b"""<form method="a"><button formmethod="get" /></form>""",
+            b"""<form method="post"><button formmethod="a" /></form>""",
             None,
             None,
             None,
@@ -494,9 +547,19 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        # If users pass an unsupported method, ValueError is raised instead of
-        # NotImplementedError, since users should know which values are
-        # supported beforehand.
+        # If users pass dialog as method, ValueError is raised instead of
+        # NotImplementedError, since users should know that it is not a
+        # supported value beforehand.
+        (
+            "https://example.com",
+            b"""<form method="a"><button formmethod="b" /></form>""",
+            None,
+            None,
+            "dialog",
+            ValueError,
+        ),
+        # If users pass an unknown method, ValueError is raised since users
+        # should know which values are supported beforehand.
         (
             "https://example.com",
             b"""<form method="a"><button formmethod="b" /></form>""",

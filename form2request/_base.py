@@ -53,17 +53,17 @@ def _method(
             assert method is not None  # lxml’s form.method is always filled
             method_src = form
     method = method.upper()
-    if method not in {"GET", "POST"}:
-        if method_src is USER:
-            raise ValueError(
-                f"The specified form method ({method!r}) is not supported."
-            )
+    if method_src is USER and method not in {"GET", "POST"}:
+        raise ValueError(f"The specified form method ({method!r}) is not supported.")
+    if method == "DIALOG":
         if method_src is click_element:
             raise NotImplementedError(
                 f"Found unsupported form method {method!r} in the formmethod "
                 f"attribute of the submission button."
             )
         raise NotImplementedError(f"Found unsupported form method {method!r}.")
+    if method not in {"GET", "POST"}:
+        method = "GET"
     return method
 
 

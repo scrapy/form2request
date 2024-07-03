@@ -121,9 +121,9 @@ To remove a field value, set it to ``None``:
 >>> form2request(form, {"foo": None})
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
-By default, if a form uses an unsupported method:
+By default, if a form uses the unsupported ``dialog`` method:
 
->>> html = b"""<form method="foo"></form>"""
+>>> html = b"""<form method="dialog"></form>"""
 >>> selector = Selector(body=html, base_url="https://example.com")
 >>> form = selector.css("form")
 
@@ -132,10 +132,21 @@ A :exc:`NotImplementedError` exception is raised:
 >>> form2request(form)
 Traceback (most recent call last):
 ...
-NotImplementedError: Found unsupported form method 'FOO'.
+NotImplementedError: Found unsupported form method 'DIALOG'.
 
-If the reason for the bad method is that the right method is set through
-JavaScript code, you can use the ``method`` parameter to set the right value:
+If a form uses an unknown method:
+
+>>> html = b"""<form method="foo"></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+
+``GET`` is used instead, as a web browser would do:
+
+>>> form2request(form)
+Request(url='https://example.com', method='GET', headers=[], body=b'')
+
+If a website uses JavaScript to set or modify the method, use the ``method``
+parameter to set the right value:
 
 >>> form2request(form, method="GET")
 Request(url='https://example.com', method='GET', headers=[], body=b'')
