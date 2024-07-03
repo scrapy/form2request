@@ -237,8 +237,8 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        # Only the application/x-www-form-urlencoded enctype (default) is
-        # supported.
+        # Supported enctypes are application/x-www-form-urlencoded (default)
+        # and text/plain. Unknown enctypes are treated as the default one.
         *(
             (
                 "https://example.com",
@@ -256,9 +256,11 @@ from form2request import Request, form2request
             for enctype in (
                 "",
                 "application/x-www-form-urlencoded",
+                "text/plain",
+                "foo",
             )
         ),
-        # Any other raise a NotImplementedError expection.
+        # multipart/form-data raises a NotImplementedError exception.
         *(
             (
                 "https://example.com",
@@ -268,16 +270,13 @@ from form2request import Request, form2request
                 None,
                 NotImplementedError,
             )
-            for enctype in (
-                "multipart/form-data",
-                "text/plain",
-                "foo",
-            )
+            for enctype in ("multipart/form-data",)
         ),
-        # The formenctype from the submit button is taken into account.
+        # The formenctype from the submit button is taken into account, even if
+        # it has an unknown value.
         (
             "https://example.com",
-            b"""<form enctype="foo"><input type="submit"
+            b"""<form enctype="multipart/form-data"><input type="submit"
             formenctype="application/x-www-form-urlencoded" /></form>""",
             None,
             None,
@@ -289,12 +288,24 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        # Even if the form has an unsupported enctype, things work if the
-        # submit button sets a supported one.
         (
             "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded"><input
-            type="submit" formenctype="foo" /></form>""",
+            b"""<form enctype="multipart/form-data"><input type="submit"
+            formenctype="foo" /></form>""",
+            None,
+            None,
+            None,
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        (
+            "https://example.com",
+            b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
+            formenctype="multipart/form-data" /></form>""",
             None,
             None,
             None,
@@ -746,6 +757,60 @@ from form2request import Request, form2request
                 [("Content-Type", "application/x-www-form-urlencoded")],
                 b"a%2B+%2F=b%2B+%2F&c%2B+%2F=d%2B+%2F",
             ),
+        ),
+        # When using the text/plain enctype, things work the same for GET, but
+        # for POST values are not URL-encoded, and line breaks are used as
+        # separators.
+        (
+            "https://example.com",
+            b"""<form enctype="text/plain"><input name="a+ /" value="b+ /"></form>""",
+            {"c+ /": "d+ /"},
+            None,
+            None,
+            Request(
+                "https://example.com?a%2B+%2F=b%2B+%2F&c%2B+%2F=d%2B+%2F",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        (
+            "https://example.com",
+            b"""<form enctype="text/plain" method="post">
+            <input name="a+ /" value="b+ /"></form>""",
+            {"c+ /": "d+ /"},
+            None,
+            None,
+            Request(
+                "https://example.com",
+                "POST",
+                [("Content-Type", "text/plain")],
+                b"a+ /=b+ /\nc+ /=d+ /",
+            ),
+        ),
+        # enctype and formenctype are treated case-insensitively.
+        (
+            "https://example.com",
+            b"""<form enctype="TeXt/PlAiN" method="post">
+            <input name="a+ /" value="b+ /"></form>""",
+            {"c+ /": "d+ /"},
+            None,
+            None,
+            Request(
+                "https://example.com",
+                "POST",
+                [("Content-Type", "text/plain")],
+                b"a+ /=b+ /\nc+ /=d+ /",
+            ),
+        ),
+        (
+            "https://example.com",
+            b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
+            formenctype="MuLtIpArT/fOrM-dAtA" /></form>""",
+            None,
+            None,
+            None,
+            NotImplementedError,
         ),
     ),
 )

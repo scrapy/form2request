@@ -98,7 +98,9 @@ def _click_element(
     return click
 
 
-def _data(data: FormdataType, click_element: HtmlElement | None) -> FormdataType:
+def _data(
+    form: FormElement, data: FormdataType, click_element: HtmlElement | None
+) -> list[tuple[str, str]]:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
         click_data = (name, click_element.get("value"))
@@ -108,10 +110,6 @@ def _data(data: FormdataType, click_element: HtmlElement | None) -> FormdataType
         else:
             data = list(data)
             data.append(click_data)
-    return data
-
-
-def _query(form: FormElement, data: FormdataType) -> str:
     keys = dict(data or ()).keys()
     if not data:
         data = []
@@ -131,12 +129,11 @@ def _query(form: FormElement, data: FormdataType) -> str:
     ]
     items = data.items() if isinstance(data, dict) else data
     values.extend((k, v) for k, v in items if v is not None)
-    encoded_values = [
-        (k.encode(), v.encode())
+    return [
+        (k, v)
         for k, vs in values
         for v in (cast("Iterable[str]", vs) if _is_listlike(vs) else [cast("str", vs)])
     ]
-    return urlencode(encoded_values, doseq=True)
 
 
 @dataclass
@@ -198,34 +195,39 @@ def form2request(
             f"No clickable elements found in form {form}. Set click=False or "
             f"point it to the element to be clicked."
         ) from None
-    if click_element is not None and (enctype := click_element.get("formenctype")):
-        if enctype != "application/x-www-form-urlencoded":
+    if click_element is not None and (
+        enctype := (click_element.get("formenctype") or "").lower()
+    ):
+        if enctype == "multipart/form-data":
             raise NotImplementedError(
                 f"{click_element} has formenctype set to {enctype!r}, which "
                 f"form2request does not currently support."
             )
     elif (
-        enctype := form.get("enctype")
-    ) and enctype != "application/x-www-form-urlencoded":
+        enctype := (form.get("enctype") or "").lower()
+    ) and enctype == "multipart/form-data":
         raise NotImplementedError(
             f"{form} has enctype set to {enctype!r}, which form2request does "
             f"not currently support."
         )
     url = _url(form, click_element)
     method = _method(form, click_element, method)
-    data = _data(data, click_element)
-    query = _query(form, data)
+    data = _data(form, data, click_element)
     headers = []
-    body = b""
+    body = ""
     if method == "GET":
-        url = urlunsplit(urlsplit(url)._replace(query=query))
+        url = urlunsplit(urlsplit(url)._replace(query=urlencode(data, doseq=True)))
     else:
         assert method == "POST"
-        headers = [("Content-Type", "application/x-www-form-urlencoded")]
-        body = query.encode()
+        if enctype == "text/plain":
+            headers = [("Content-Type", "text/plain")]
+            body = "\n".join(f"{k}={v}" for k, v in data)
+        else:
+            headers = [("Content-Type", "application/x-www-form-urlencoded")]
+            body = urlencode(data, doseq=True)
     return Request(
         url=url,
         method=method,
         headers=headers,
-        body=body,
+        body=body.encode(),
     )
