@@ -6,15 +6,13 @@ from form2request import Request, form2request
 
 
 @pytest.mark.parametrize(
-    ("base_url", "html", "data", "click", "method", "expected"),
+    ("base_url", "html", "kwargs", "expected"),
     (
         # Empty form.
         (
             "https://example.com",
             b"""<form></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -26,9 +24,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="hidden" name="a" value="b" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -42,9 +38,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -56,9 +50,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="text" name="a" /></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -71,9 +63,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="hidden" name="a" value="b" /></form>""",
-            {"a": "c"},
-            None,
-            None,
+            {"data": {"a": "c"}},
             Request(
                 "https://example.com?a=c",
                 "GET",
@@ -85,9 +75,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form></form>""",
-            {"a": None},
-            None,
-            None,
+            {"data": {"a": None}},
             Request(
                 "https://example.com",
                 "GET",
@@ -100,9 +88,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="text" name="a" /></form>""",
-            {"a": None},
-            None,
-            None,
+            {"data": {"a": None}},
             Request(
                 "https://example.com",
                 "GET",
@@ -115,9 +101,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="hidden" name="a" value="b" /></form>""",
-            {"a": None},
-            None,
-            None,
+            {"data": {"a": None}},
             Request(
                 "https://example.com",
                 "GET",
@@ -129,9 +113,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="text" name="a" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=",
                 "GET",
@@ -143,9 +125,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form></form>""",
-            (("a", "b"), ("a", "c")),
-            None,
-            None,
+            {"data": (("a", "b"), ("a", "c"))},
             Request(
                 "https://example.com?a=b&a=c",
                 "GET",
@@ -158,9 +138,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="submit" name="a" value="b" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -172,9 +150,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="submit" name="a" value="b" /></form>""",
-            None,
-            False,
-            None,
+            {"click": False},
             Request(
                 "https://example.com",
                 "GET",
@@ -186,9 +162,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input type="submit" name="a" value="b" /></form>""",
-            None,
-            True,
-            None,
+            {"click": True},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -201,9 +175,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form></form>""",
-            None,
-            True,
-            None,
+            {"click": True},
             ValueError,
         ),
         # If there are 2 or more submit buttons, the first one is used by
@@ -212,9 +184,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><input type="submit" name="a" value="b" />
             <input type="submit" name="a" value="c" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -227,9 +197,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><input type="submit" name="a" value="b" />
             <input type="submit" name="a" value="c" /></form>""",
-            None,
-            './/*[@value="c"]',
-            None,
+            {"click": './/*[@value="c"]'},
             Request(
                 "https://example.com?a=c",
                 "GET",
@@ -243,9 +211,7 @@ from form2request import Request, form2request
             (
                 "https://example.com",
                 f"""<form enctype="{enctype}"></form>""".encode(),
-                None,
-                None,
-                None,
+                {},
                 Request(
                     "https://example.com",
                     "GET",
@@ -265,9 +231,7 @@ from form2request import Request, form2request
             (
                 "https://example.com",
                 f"""<form enctype="{enctype}"></form>""".encode(),
-                None,
-                None,
-                None,
+                {},
                 NotImplementedError,
             )
             for enctype in ("multipart/form-data",)
@@ -278,9 +242,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="multipart/form-data"><input type="submit"
             formenctype="application/x-www-form-urlencoded" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -292,9 +254,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="multipart/form-data"><input type="submit"
             formenctype="foo" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -306,19 +266,29 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
             formenctype="multipart/form-data" /></form>""",
-            None,
-            None,
-            None,
+            {},
             NotImplementedError,
+        ),
+        # enctype may be overridden, in which case it raises ValueError for
+        # both unknown and unsupported values.
+        (
+            "https://example.com",
+            b"""<form></form>""",
+            {"enctype": "multipart/form-data"},
+            ValueError,
+        ),
+        (
+            "https://example.com",
+            b"""<form></form>""",
+            {"enctype": "a"},
+            ValueError,
         ),
         # Only submit buttons are detected as such.
         *(
             (
                 "https://example.com",
                 f"""<form>{button}<button name="c" value="d" /></form>""".encode(),
-                None,
-                None,
-                None,
+                {},
                 Request(
                     "https://example.com?a=b",
                     "GET",
@@ -338,9 +308,7 @@ from form2request import Request, form2request
             (
                 "https://example.com",
                 f"""<form>{button}<button name="c" value="d" /></form>""".encode(),
-                None,
-                None,
-                None,
+                {},
                 Request(
                     f"https://example.com?{query}",
                     "GET",
@@ -365,9 +333,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form action="a"></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com/a",
                 "GET",
@@ -379,9 +345,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form action="a"><button type="submit" formaction="b" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com/b",
                 "GET",
@@ -393,9 +357,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form action=" a "></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com/a",
                 "GET",
@@ -407,9 +369,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="get"></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -420,9 +380,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="post"></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com",
                 "POST",
@@ -434,9 +392,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="post"><button type="submit" formmethod="get" /></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -447,9 +403,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="get"><button formmethod="post" /></form>""",
-            {"a": "b"},
-            None,
-            None,
+            {"data": {"a": "b"}},
             Request(
                 "https://example.com",
                 "POST",
@@ -463,25 +417,19 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="dialog"></form>""",
-            None,
-            None,
-            None,
+            {},
             NotImplementedError,
         ),
         (
             "https://example.com",
             b"""<form><button formmethod="dialog" /></form>""",
-            None,
-            None,
-            None,
+            {},
             NotImplementedError,
         ),
         (
             "https://example.com",
             b"""<form method="dialog"><button formmethod="get" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -492,9 +440,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="dialog"><button formmethod="a" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -506,9 +452,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="a"></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -519,9 +463,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><button formmethod="a" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -532,9 +474,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="post"><button formmethod="a" /></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -548,9 +488,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="a"><button formmethod="b" /></form>""",
-            None,
-            None,
-            "get",
+            {"method": "get"},
             Request(
                 "https://example.com",
                 "GET",
@@ -564,9 +502,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="a"><button formmethod="b" /></form>""",
-            None,
-            None,
-            "dialog",
+            {"method": "dialog"},
             ValueError,
         ),
         # If users pass an unknown method, ValueError is raised since users
@@ -574,9 +510,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="a"><button formmethod="b" /></form>""",
-            None,
-            None,
-            "c",
+            {"method": "c"},
             ValueError,
         ),
         # User data as an iterable of key-value tuples gets merged with button
@@ -584,9 +518,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><button name="d" value="e"></form>""",
-            (("a", "b"), ("a", "c")),
-            None,
-            None,
+            {"data": (("a", "b"), ("a", "c"))},
             Request(
                 "https://example.com?a=b&a=c&d=e",
                 "GET",
@@ -598,9 +530,7 @@ from form2request import Request, form2request
         pytest.param(
             "https://example.com",
             b"""<form><input disabled name="a" value="b"></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -613,9 +543,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><fieldset disabled><input name="a" value="b">
             </fieldset></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -628,9 +556,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><select name="a"><option value="b">B</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -642,9 +568,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><select name="a"><option>B</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=B",
                 "GET",
@@ -658,9 +582,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><select name="a"><option value="b">B</option>
             <option value="c">C</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b",
                 "GET",
@@ -673,9 +595,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><select name="a"><option value="b">B</option>
             <option selected value="c">C</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=c",
                 "GET",
@@ -689,9 +609,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><select multiple name="a"><option value="b">B</option>
             <option value="c">C</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com",
                 "GET",
@@ -705,9 +623,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><select multiple name="a"><option value="b">B</option>
             <option value="c" selected>C</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=c",
                 "GET",
@@ -721,9 +637,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form><select multiple name="a"><option value="b" selected>B</option>
             <option value="c" selected>C</option></select></form>""",
-            None,
-            None,
-            None,
+            {},
             Request(
                 "https://example.com?a=b&a=c",
                 "GET",
@@ -735,9 +649,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form><input name="a+ /" value="b+ /"></form>""",
-            {"c+ /": "d+ /"},
-            None,
-            None,
+            {"data": {"c+ /": "d+ /"}},
             Request(
                 "https://example.com?a%2B+%2F=b%2B+%2F&c%2B+%2F=d%2B+%2F",
                 "GET",
@@ -748,9 +660,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form method="post"><input name="a+ /" value="b+ /"></form>""",
-            {"c+ /": "d+ /"},
-            None,
-            None,
+            {"data": {"c+ /": "d+ /"}},
             Request(
                 "https://example.com",
                 "POST",
@@ -764,9 +674,7 @@ from form2request import Request, form2request
         (
             "https://example.com",
             b"""<form enctype="text/plain"><input name="a+ /" value="b+ /"></form>""",
-            {"c+ /": "d+ /"},
-            None,
-            None,
+            {"data": {"c+ /": "d+ /"}},
             Request(
                 "https://example.com?a%2B+%2F=b%2B+%2F&c%2B+%2F=d%2B+%2F",
                 "GET",
@@ -778,9 +686,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="text/plain" method="post">
             <input name="a+ /" value="b+ /"></form>""",
-            {"c+ /": "d+ /"},
-            None,
-            None,
+            {"data": {"c+ /": "d+ /"}},
             Request(
                 "https://example.com",
                 "POST",
@@ -793,9 +699,7 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="TeXt/PlAiN" method="post">
             <input name="a+ /" value="b+ /"></form>""",
-            {"c+ /": "d+ /"},
-            None,
-            None,
+            {"data": {"c+ /": "d+ /"}},
             Request(
                 "https://example.com",
                 "POST",
@@ -807,24 +711,23 @@ from form2request import Request, form2request
             "https://example.com",
             b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
             formenctype="MuLtIpArT/fOrM-dAtA" /></form>""",
-            None,
-            None,
-            None,
+            {},
             NotImplementedError,
         ),
     ),
 )
-def test_form2request(base_url, html, data, click, method, expected):
+def test_form2request(base_url, html, kwargs, expected):
     root = fromstring(html, base_url=base_url)
     form = root.xpath("//form")[0]
+    click = kwargs.pop("click", None)
     if isinstance(click, str):
         click = form.xpath(click)[0]
     if isinstance(expected, Request):
-        actual = form2request(form, data, click=click, method=method)
+        actual = form2request(form, click=click, **kwargs)
         assert expected == actual
     else:
         with pytest.raises(expected):
-            form2request(form, data, click=click, method=method)
+            form2request(form, click=click, **kwargs)
 
 
 def test_form2request_no_base_url():

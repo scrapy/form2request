@@ -144,6 +144,7 @@ def form2request(
     *,
     click: None | bool | HtmlElement = None,
     method: None | str = None,
+    enctype: None | str = None,
 ) -> Request:
     """Return a form submission request.
 
@@ -187,7 +188,13 @@ def form2request(
             f"No clickable elements found in form {form}. Set click=False or "
             f"point it to the element to be clicked."
         ) from None
-    if click_element is not None and (
+    if enctype:
+        enctype = enctype.lower()
+        if enctype not in {"application/x-www-form-urlencoded", "text/plain"}:
+            raise ValueError(
+                f"The specified form enctype ({enctype!r}) is not supported."
+            )
+    elif click_element is not None and (
         enctype := (click_element.get("formenctype") or "").lower()
     ):
         if enctype == "multipart/form-data":
@@ -198,10 +205,7 @@ def form2request(
     elif (
         enctype := (form.get("enctype") or "").lower()
     ) and enctype == "multipart/form-data":
-        raise NotImplementedError(
-            f"{form} has enctype set to {enctype!r}, which form2request does "
-            f"not currently support."
-        )
+        raise NotImplementedError(f"Found unsupported form enctype {enctype!r}.")
     url = _url(form, click_element)
     method = _method(form, click_element, method)
     data = _data(form, data, click_element)

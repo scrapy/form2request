@@ -121,7 +121,13 @@ To remove a field value, set it to ``None``:
 >>> form2request(form, {"foo": None})
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
-By default, if a form uses the unsupported ``dialog`` method:
+
+Handling the form method
+========================
+
+By default, if a form uses the unsupported ``dialog`` method_:
+
+.. _method: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method
 
 >>> html = b"""<form method="dialog"></form>"""
 >>> selector = Selector(body=html, base_url="https://example.com")
@@ -150,6 +156,43 @@ parameter to set the right value:
 
 >>> form2request(form, method="GET")
 Request(url='https://example.com', method='GET', headers=[], body=b'')
+
+
+Handling the form enctype
+=========================
+
+By default, if a form uses the unsupported ``multipart/form-data`` enctype_:
+
+.. _enctype: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype
+
+>>> html = b"""<form enctype="multipart/form-data"></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+
+A :exc:`NotImplementedError` exception is raised:
+
+>>> form2request(form)
+Traceback (most recent call last):
+...
+NotImplementedError: Found unsupported form enctype 'multipart/form-data'.
+
+If a form uses an unknown enctype:
+
+>>> html = b"""<form enctype="foo" method="post"></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+
+``application/x-www-form-urlencoded`` is used instead, as a web browser would
+do:
+
+>>> form2request(form)
+Request(url='https://example.com', method='POST', headers=[('Content-Type', 'application/x-www-form-urlencoded')], body=b'')
+
+If a website uses JavaScript to set or modify the enctype, use the ``enctype``
+parameter to set the right value:
+
+>>> form2request(form, enctype="application/x-www-form-urlencoded")
+Request(url='https://example.com', method='POST', headers=[('Content-Type', 'application/x-www-form-urlencoded')], body=b'')
 
 
 .. _click:
