@@ -152,7 +152,6 @@ class Request:
 def form2request(
     form: FormElement | Selector | SelectorList,
     data: FormdataType = None,
-    /,
     *,
     click: None | bool | HtmlElement = None,
     method: None | str = None,
