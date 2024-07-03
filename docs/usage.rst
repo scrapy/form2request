@@ -129,7 +129,7 @@ By default, if a form uses an unsupported method:
 >>> root = fromstring(html, base_url="https://example.com")
 >>> form = root.xpath("//form")[0]
 
-A :exc:`NotImplementedError` exception will be raised:
+A :exc:`NotImplementedError` exception is raised:
 
 >>> request_from_form(form)
 Traceback (most recent call last):
