@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Union
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from parsel import Selector, SelectorList
@@ -14,14 +14,6 @@ if TYPE_CHECKING:
 FormdataVType = Union[str, Iterable[str]]
 FormdataKVType = Tuple[str, FormdataVType]
 FormdataType = Optional[Union[Dict[str, FormdataVType], Iterable[FormdataKVType]]]
-
-
-def _is_listlike(x: Any) -> bool:
-    """Return ``True`` if *x* is a list-like object or ``False`` otherwise.
-
-    A list-like object is an iterable, excluding strings or bytes.
-    """
-    return hasattr(x, "__iter__") and not isinstance(x, (str, bytes))
 
 
 def _url(form: FormElement, click_element: HtmlElement | None) -> str:
@@ -132,7 +124,7 @@ def _data(
     return [
         (k, v)
         for k, vs in values
-        for v in (cast("Iterable[str]", vs) if _is_listlike(vs) else [cast("str", vs)])
+        for v in ([vs] if isinstance(vs, (str, bytes)) else vs)
     ]
 
 
