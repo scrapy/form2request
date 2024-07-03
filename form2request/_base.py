@@ -186,7 +186,8 @@ def form2request(
     instance of :class:`lxml.html.FormElement`.
 
     *data* should be either a dictionary of a list of 2-item tuples indicating
-    the key-value pairs to include in the request as submission data.
+    the key-value pairs to include in the request as submission data. Keys with
+    ``None`` as value exclude matching form fields.
 
     *click* can be any of:
 
@@ -204,11 +205,11 @@ def form2request(
 
     -   ``False`` builds a request for a non-click-based form submission.
 
-    -   A submission element of *form*, to build a request for a form submission
-        based on the clicking of that specific element.
+    -   A submit button of *form*, to build a request for a form submission
+        based on the clicking of that button.
 
-        On forms with multiple submission elements, specifying the right
-        submission element here may be necessary.
+        On forms with multiple submit buttons, specifying the right button here
+        may be necessary.
 
     *method* and *enctype* may be used to override matching form attributes.
     """
