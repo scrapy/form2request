@@ -19,8 +19,7 @@ submission request data <request>`:
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 :func:`~form2request.form2request` supports :ref:`user-defined form data
-<data>` and :ref:`choosing a specific form submission button (or none)
-<click>`.
+<data>` and :ref:`choosing a specific submit button (or none) <click>`.
 
 
 .. _form:
@@ -88,7 +87,7 @@ user-defined data:
 >>> selector = Selector(body=html, base_url="https://example.com")
 >>> form = selector.css("form")
 
-Use the second parameter of :func:`~form2request.form2request`,  to define
+Use the ``data`` parameter of :func:`~form2request.form2request`,  to define
 the corresponding data:
 
 >>> form2request(form, {"foo": "bar"})
@@ -107,6 +106,8 @@ iterable of key-value tuples:
 >>> form2request(form, (("foo", "bar"), ("foo", "baz")))
 Request(url='https://example.com?foo=bar&foo=baz', method='GET', headers=[], body=b'')
 
+.. _remove-data:
+
 Sometimes, you might want to prevent a value from a field from being included
 in the generated request data. For example, because the field is removed or
 disabled through JavaScript, or because the field or a parent element has the
@@ -122,85 +123,24 @@ To remove a field value, set it to ``None``:
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 
-Handling the form method
+Handling form attributes
 ========================
 
-By default, if a form uses the unsupported ``dialog`` method_:
-
-.. _method: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method
-
->>> html = b"""<form method="dialog"></form>"""
->>> selector = Selector(body=html, base_url="https://example.com")
->>> form = selector.css("form")
-
-A :exc:`NotImplementedError` exception is raised:
-
->>> form2request(form)
-Traceback (most recent call last):
-...
-NotImplementedError: Found unsupported form method 'DIALOG'.
-
-If a form uses an unknown method:
-
->>> html = b"""<form method="foo"></form>"""
->>> selector = Selector(body=html, base_url="https://example.com")
->>> form = selector.css("form")
-
-``GET`` is used instead, as a web browser would do:
-
->>> form2request(form)
-Request(url='https://example.com', method='GET', headers=[], body=b'')
-
-If a website uses JavaScript to set or modify the method, use the ``method``
-parameter to set the right value:
-
->>> form2request(form, method="GET")
-Request(url='https://example.com', method='GET', headers=[], body=b'')
-
-
-Handling the form enctype
-=========================
-
-By default, if a form uses the unsupported ``multipart/form-data`` enctype_:
+You can override the method_ and enctype_ attributes of a form:
 
 .. _enctype: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype
+.. _method: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method
 
->>> html = b"""<form enctype="multipart/form-data"></form>"""
->>> selector = Selector(body=html, base_url="https://example.com")
->>> form = selector.css("form")
-
-A :exc:`NotImplementedError` exception is raised:
-
->>> form2request(form)
-Traceback (most recent call last):
-...
-NotImplementedError: Found unsupported form enctype 'multipart/form-data'.
-
-If a form uses an unknown enctype:
-
->>> html = b"""<form enctype="foo" method="post"></form>"""
->>> selector = Selector(body=html, base_url="https://example.com")
->>> form = selector.css("form")
-
-``application/x-www-form-urlencoded`` is used instead, as a web browser would
-do:
-
->>> form2request(form)
-Request(url='https://example.com', method='POST', headers=[('Content-Type', 'application/x-www-form-urlencoded')], body=b'')
-
-If a website uses JavaScript to set or modify the enctype, use the ``enctype``
-parameter to set the right value:
-
->>> form2request(form, enctype="application/x-www-form-urlencoded")
-Request(url='https://example.com', method='POST', headers=[('Content-Type', 'application/x-www-form-urlencoded')], body=b'')
+>>> form2request(form, method="POST", enctype="text/plain")
+Request(url='https://example.com', method='POST', headers=[('Content-Type', 'text/plain')], body=b'foo=bar')
 
 
 .. _click:
 
-Configuring form submission
-===========================
+Choosing a submit button
+========================
 
-When an HTML form is submitted, the way the submission is triggered has an
+When an HTML form is submitted, the way form submission is triggered has an
 impact on the resulting request data.
 
 Given a submit button with ``name`` and ``value`` attributes:
@@ -229,8 +169,7 @@ You may also find forms with more than one submit button:
 >>> selector = Selector(body=html, base_url="https://example.com")
 >>> form = selector.css("form")
 
-By default, :func:`~form2request.form2request` clicks the first submission
-element:
+By default, :func:`~form2request.form2request` clicks the first submit button:
 
 >>> form2request(form)
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
