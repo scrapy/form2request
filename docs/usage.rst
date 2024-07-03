@@ -11,14 +11,14 @@ Usage
 >>> root = fromstring(html, base_url="https://example.com")
 >>> form = root.xpath("//form")[0]
 
-You can use :func:`~form2request.request_from_form` to generate :ref:`form
+You can use :func:`~form2request.form2request` to generate :ref:`form
 submission request data <request>`:
 
->>> from form2request import request_from_form
->>> request_from_form(form)
+>>> from form2request import form2request
+>>> form2request(form)
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
-:func:`~form2request.request_from_form` supports :ref:`user-defined form data
+:func:`~form2request.form2request` supports :ref:`user-defined form data
 <data>` and :ref:`choosing a specific form submission button (or none)
 <click>`.
 
@@ -28,7 +28,7 @@ Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 Getting a form
 ==============
 
-:func:`~form2request.request_from_form` requires an
+:func:`~form2request.form2request` requires an
 :class:`lxml.html.FormElement` object.
 
 You can build one using :func:`lxml.html.fromstring` to parse an HTML document
@@ -90,10 +90,10 @@ user-defined data:
 >>> root = fromstring(html, base_url="https://example.com")
 >>> form = root.xpath("//form")[0]
 
-Use the second parameter of :func:`~form2request.request_from_form`,  to define
+Use the second parameter of :func:`~form2request.form2request`,  to define
 the corresponding data:
 
->>> request_from_form(form, {"foo": "bar"})
+>>> form2request(form, {"foo": "bar"})
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 You may sometimes find forms where more than one field has the same ``name``
@@ -106,7 +106,7 @@ attribute:
 To specify values for all same-name fields, instead of a dictionary, use an
 iterable of key-value tuples:
 
->>> request_from_form(form, (("foo", "bar"), ("foo", "baz")))
+>>> form2request(form, (("foo", "bar"), ("foo", "baz")))
 Request(url='https://example.com?foo=bar&foo=baz', method='GET', headers=[], body=b'')
 
 Sometimes, you might want to prevent a value from a field from being included
@@ -120,7 +120,7 @@ disabled through JavaScript, or because the field or a parent element has the
 
 To remove a field value, set it to ``None``:
 
->>> request_from_form(form, {"foo": None})
+>>> form2request(form, {"foo": None})
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 By default, if a form uses an unsupported method:
@@ -131,7 +131,7 @@ By default, if a form uses an unsupported method:
 
 A :exc:`NotImplementedError` exception is raised:
 
->>> request_from_form(form)
+>>> form2request(form)
 Traceback (most recent call last):
 ...
 NotImplementedError: Found unsupported form method 'FOO'.
@@ -139,7 +139,7 @@ NotImplementedError: Found unsupported form method 'FOO'.
 If the reason for the bad method is that the right method is set through
 JavaScript code, you can use the ``method`` parameter to set the right value:
 
->>> request_from_form(form, method="GET")
+>>> form2request(form, method="GET")
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 
@@ -158,17 +158,17 @@ Given a submit button with ``name`` and ``value`` attributes:
 >>> form = root.xpath("//form")[0]
 
 If you submit the form by clicking that button, those attributes are included
-in the request data, which is what :func:`~form2request.request_from_form` does
+in the request data, which is what :func:`~form2request.form2request` does
 by default:
 
->>> request_from_form(form)
+>>> form2request(form)
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 However, sometimes it is possible to submit a form without clicking a submit
 button, even when there is such a button. In such cases, the button data should
 not be part of the request data. For such cases, set ``click`` to ``False``:
 
->>> request_from_form(form, click=False)
+>>> form2request(form, click=False)
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 You may also find forms with more than one submit button:
@@ -177,16 +177,16 @@ You may also find forms with more than one submit button:
 >>> root = fromstring(html, base_url="https://example.com")
 >>> form = root.xpath("//form")[0]
 
-By default, :func:`~form2request.request_from_form` clicks the first submission
+By default, :func:`~form2request.form2request` clicks the first submission
 element:
 
->>> request_from_form(form)
+>>> form2request(form)
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 To change that, set ``click`` to the element that should be clicked:
 
 >>> submit_baz = form.xpath('.//*[@value="baz"]')[0]
->>> request_from_form(form, click=submit_baz)
+>>> form2request(form, click=submit_baz)
 Request(url='https://example.com?foo=baz', method='GET', headers=[], body=b'')
 
 
@@ -198,7 +198,7 @@ Using request data
 :class:`~form2request.Request` is a simple data container that you can use to
 build an actual request object:
 
->>> request_data = request_from_form(form)
+>>> request_data = form2request(form)
 
 Here are some examples for popular Python libraries and frameworks:
 

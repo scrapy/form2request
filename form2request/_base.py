@@ -143,7 +143,7 @@ class Request:
     body: bytes
 
 
-def request_from_form(
+def form2request(
     form: FormElement,
     data: FormdataType = None,
     /,

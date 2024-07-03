@@ -1,7 +1,7 @@
 import pytest
 from lxml.html import fromstring
 
-from form2request import Request, request_from_form
+from form2request import Request, form2request
 
 
 @pytest.mark.parametrize(
@@ -685,22 +685,22 @@ from form2request import Request, request_from_form
         ),
     ),
 )
-def test_request_from_form(base_url, html, data, click, method, expected):
+def test_form2request(base_url, html, data, click, method, expected):
     root = fromstring(html, base_url=base_url)
     form = root.xpath("//form")[0]
     if isinstance(click, str):
         click = form.xpath(click)[0]
     if isinstance(expected, Request):
-        actual = request_from_form(form, data, click=click, method=method)
+        actual = form2request(form, data, click=click, method=method)
         assert expected == actual
     else:
         with pytest.raises(expected):
-            request_from_form(form, data, click=click, method=method)
+            form2request(form, data, click=click, method=method)
 
 
-def test_request_from_form_no_base_url():
+def test_form2request_no_base_url():
     html = "<form></form>"
     root = fromstring(html)
     form = root.xpath("//form")[0]
     with pytest.raises(ValueError):
-        request_from_form(form)
+        form2request(form)
