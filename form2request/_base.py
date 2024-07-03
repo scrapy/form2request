@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Tuple, Union, cast
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
+from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
@@ -75,7 +76,7 @@ def _click_element(
 ) -> HtmlElement | None:
     if click is False:
         return None
-    if click in {None, True}:
+    if click is None or click is True:
         clickables = list(
             form.xpath(
                 'descendant::input[re:test(@type, "^(submit|image)$", "i")]'
@@ -89,6 +90,11 @@ def _click_element(
             else:
                 return None
         click = clickables[0]
+    else:
+        if isinstance(click, SelectorList):
+            click = click[0]
+        if isinstance(click, Selector):
+            click = click.root
     return click
 
 
@@ -144,7 +150,7 @@ class Request:
 
 
 def form2request(
-    form: FormElement,
+    form: FormElement | Selector | SelectorList,
     data: FormdataType = None,
     /,
     *,
@@ -153,7 +159,9 @@ def form2request(
 ) -> Request:
     """Return a form submission request.
 
-    *form* should be an instance of :class:`lxml.html.FormElement`.
+    *form* must be an instance of :class:`parsel.selector.Selector` or
+    :class:`parsel.selector.SelectorList` that points to an HTML form, or an
+    instance of :class:`lxml.html.FormElement`.
 
     *data* should be either a dictionary of a list of 2-item tuples indicating
     the key-value pairs to include in the request as submission data.
@@ -180,6 +188,10 @@ def form2request(
         On forms with multiple submission elements, specifying the right
         submission element here may be necessary.
     """
+    if isinstance(form, SelectorList):
+        form = form[0]
+    if isinstance(form, Selector):
+        form = form.root
     try:
         click_element = _click_element(form, click)
     except _NoClickables:

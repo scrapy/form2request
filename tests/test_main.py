@@ -1,5 +1,6 @@
 import pytest
 from lxml.html import fromstring
+from parsel import Selector
 
 from form2request import Request, form2request
 
@@ -704,3 +705,25 @@ def test_form2request_no_base_url():
     form = root.xpath("//form")[0]
     with pytest.raises(ValueError):
         form2request(form)
+
+
+def test_form2request_parsel():
+    html = b"""<form><input type="submit" name="foo" value="bar" />
+    <input type="submit" name="foo" value="baz" /></form>"""
+    selector = Selector(body=html, base_url="https://example.com")
+    form = selector.css("form")
+
+    expected = Request(
+        url="https://example.com?foo=bar", method="GET", headers=[], body=b""
+    )
+    assert form2request(form) == expected
+    assert form2request(form[0]) == expected
+    assert form2request(form[0].root) == expected
+
+    submit_baz = form.css("[value=baz]")
+    expected = Request(
+        url="https://example.com?foo=baz", method="GET", headers=[], body=b""
+    )
+    assert form2request(form, click=submit_baz) == expected
+    assert form2request(form, click=submit_baz[0]) == expected
+    assert form2request(form, click=submit_baz[0].root) == expected

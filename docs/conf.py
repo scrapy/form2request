@@ -25,6 +25,8 @@ nitpick_ignore = [
             "FormdataType",
             "FormElement",
             "HtmlElement",
+            "Selector",
+            "SelectorList",
         )
     ),
 ]
