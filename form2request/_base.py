@@ -209,6 +209,8 @@ def form2request(
 
         On forms with multiple submission elements, specifying the right
         submission element here may be necessary.
+
+    *method* and *enctype* may be used to override matching form attributes.
     """
     form = _parsel_to_lxml(form)
     click_element = _click_element(form, click)
