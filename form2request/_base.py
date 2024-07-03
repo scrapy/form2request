@@ -16,6 +16,38 @@ FormdataKVType = Tuple[str, FormdataVType]
 FormdataType = Optional[Union[Dict[str, FormdataVType], Iterable[FormdataKVType]]]
 
 
+def _parsel_to_lxml(element: HtmlElement | Selector | SelectorList) -> HtmlElement:
+    if isinstance(element, SelectorList):
+        element = element[0]
+    if isinstance(element, Selector):
+        element = element.root
+    return element
+
+
+def _enctype(
+    form: FormElement, click_element: HtmlElement | None, enctype: None | str
+) -> str:
+    if enctype:
+        enctype = enctype.lower()
+        if enctype not in {"application/x-www-form-urlencoded", "text/plain"}:
+            raise ValueError(
+                f"The specified form enctype ({enctype!r}) is not supported."
+            )
+    elif click_element is not None and (
+        enctype := (click_element.get("formenctype") or "").lower()
+    ):
+        if enctype == "multipart/form-data":
+            raise NotImplementedError(
+                f"{click_element} has formenctype set to {enctype!r}, which "
+                f"form2request does not currently support."
+            )
+    elif (
+        enctype := (form.get("enctype") or "").lower()
+    ) and enctype == "multipart/form-data":
+        raise NotImplementedError(f"Found unsupported form enctype {enctype!r}.")
+    return enctype
+
+
 def _url(form: FormElement, click_element: HtmlElement | None) -> str:
     if form.base_url is None:
         raise ValueError(f"{form} has no base_url set.")
@@ -59,10 +91,6 @@ def _method(
     return method
 
 
-class _NoClickables(ValueError):
-    pass
-
-
 def _click_element(
     form: FormElement, click: None | bool | HtmlElement
 ) -> HtmlElement | None:
@@ -78,15 +106,15 @@ def _click_element(
         )
         if not clickables:
             if click:
-                raise _NoClickables
+                raise ValueError(
+                    f"No clickable elements found in form {form}. Set click=False or "
+                    f"point it to the element to be clicked."
+                )
             else:
                 return None
         click = clickables[0]
     else:
-        if isinstance(click, SelectorList):
-            click = click[0]
-        if isinstance(click, Selector):
-            click = click.root
+        click = _parsel_to_lxml(click)
     return click
 
 
@@ -177,44 +205,18 @@ def form2request(
         On forms with multiple submission elements, specifying the right
         submission element here may be necessary.
     """
-    if isinstance(form, SelectorList):
-        form = form[0]
-    if isinstance(form, Selector):
-        form = form.root
-    try:
-        click_element = _click_element(form, click)
-    except _NoClickables:
-        raise ValueError(
-            f"No clickable elements found in form {form}. Set click=False or "
-            f"point it to the element to be clicked."
-        ) from None
-    if enctype:
-        enctype = enctype.lower()
-        if enctype not in {"application/x-www-form-urlencoded", "text/plain"}:
-            raise ValueError(
-                f"The specified form enctype ({enctype!r}) is not supported."
-            )
-    elif click_element is not None and (
-        enctype := (click_element.get("formenctype") or "").lower()
-    ):
-        if enctype == "multipart/form-data":
-            raise NotImplementedError(
-                f"{click_element} has formenctype set to {enctype!r}, which "
-                f"form2request does not currently support."
-            )
-    elif (
-        enctype := (form.get("enctype") or "").lower()
-    ) and enctype == "multipart/form-data":
-        raise NotImplementedError(f"Found unsupported form enctype {enctype!r}.")
+    form = _parsel_to_lxml(form)
+    click_element = _click_element(form, click)
     url = _url(form, click_element)
     method = _method(form, click_element, method)
-    data = _data(form, data, click_element)
     headers = []
     body = ""
+    data = _data(form, data, click_element)
     if method == "GET":
         url = urlunsplit(urlsplit(url)._replace(query=urlencode(data, doseq=True)))
     else:
         assert method == "POST"
+        enctype = _enctype(form, click_element, enctype)
         if enctype == "text/plain":
             headers = [("Content-Type", "text/plain")]
             body = "\n".join(f"{k}={v}" for k, v in data)
