@@ -226,60 +226,71 @@ from form2request import Request, form2request
                 "foo",
             )
         ),
-        # multipart/form-data raises a NotImplementedError exception.
-        *(
-            (
-                "https://example.com",
-                f"""<form enctype="{enctype}"></form>""".encode(),
-                {},
-                NotImplementedError,
-            )
-            for enctype in ("multipart/form-data",)
+        # multipart/form-data raises a NotImplementedError exception when the
+        # method is POST.
+        (
+            "https://example.com",
+            b"""<form enctype="multipart/form-data" method="post"></form>""",
+            {},
+            NotImplementedError,
+        ),
+        # multipart/form-data does work when method is GET (default).
+        (
+            "https://example.com",
+            b"""<form enctype="multipart/form-data">
+            <input name="a" value="b" /></form>""",
+            {},
+            Request(
+                "https://example.com?a=b",
+                "GET",
+                [],
+                b"",
+            ),
         ),
         # The formenctype from the submit button is taken into account, even if
         # it has an unknown value.
         (
             "https://example.com",
-            b"""<form enctype="multipart/form-data"><input type="submit"
+            b"""<form enctype="multipart/form-data" method="post"><input type="submit"
             formenctype="application/x-www-form-urlencoded" /></form>""",
             {},
             Request(
                 "https://example.com",
-                "GET",
-                [],
+                "POST",
+                [("Content-Type", "application/x-www-form-urlencoded")],
                 b"",
             ),
         ),
         (
             "https://example.com",
-            b"""<form enctype="multipart/form-data"><input type="submit"
+            b"""<form enctype="multipart/form-data" method="post"><input type="submit"
             formenctype="foo" /></form>""",
             {},
             Request(
                 "https://example.com",
-                "GET",
-                [],
+                "POST",
+                [("Content-Type", "application/x-www-form-urlencoded")],
                 b"",
             ),
         ),
         (
             "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
-            formenctype="multipart/form-data" /></form>""",
+            b"""<form enctype="application/x-www-form-urlencoded" method="post">
+            <input type="submit" formenctype="multipart/form-data" /></form>""",
             {},
             NotImplementedError,
         ),
         # enctype may be overridden, in which case it raises ValueError for
-        # both unknown and unsupported values.
+        # both unknown and unsupported values when method is POST.
         (
             "https://example.com",
-            b"""<form></form>""",
+            b"""<form method="post"></form>""",
             {"enctype": "multipart/form-data"},
             ValueError,
         ),
         (
             "https://example.com",
-            b"""<form></form>""",
+            b"""<form method="post"></form>""",
             {"enctype": "a"},
             ValueError,
         ),
@@ -709,8 +720,8 @@ from form2request import Request, form2request
         ),
         (
             "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded"><input type="submit"
-            formenctype="MuLtIpArT/fOrM-dAtA" /></form>""",
+            b"""<form enctype="application/x-www-form-urlencoded" method="post">
+            <input type="submit" formenctype="MuLtIpArT/fOrM-dAtA" /></form>""",
             {},
             NotImplementedError,
         ),

@@ -31,7 +31,8 @@ def _enctype(
         enctype = enctype.lower()
         if enctype not in {"application/x-www-form-urlencoded", "text/plain"}:
             raise ValueError(
-                f"The specified form enctype ({enctype!r}) is not supported."
+                f"The specified form enctype ({enctype!r}) is not supported "
+                f"for forms with the POST method."
             )
     elif click_element is not None and (
         enctype := (click_element.get("formenctype") or "").lower()
@@ -39,12 +40,16 @@ def _enctype(
         if enctype == "multipart/form-data":
             raise NotImplementedError(
                 f"{click_element} has formenctype set to {enctype!r}, which "
-                f"form2request does not currently support."
+                f"form2request does not currently support for forms with the "
+                f"POST method."
             )
     elif (
         enctype := (form.get("enctype") or "").lower()
     ) and enctype == "multipart/form-data":
-        raise NotImplementedError(f"Found unsupported form enctype {enctype!r}.")
+        raise NotImplementedError(
+            f"{form} has enctype set to {enctype!r}, which form2request does "
+            f"not currently support for forms with the POST method."
+        )
     return enctype
 
 
