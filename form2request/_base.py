@@ -179,7 +179,7 @@ def form2request(
     method: None | str = None,
     enctype: None | str = None,
 ) -> Request:
-    """Return a form submission request.
+    """Return request data for an HTML form submission.
 
     *form* must be an instance of :class:`parsel.selector.Selector` or
     :class:`parsel.selector.SelectorList` that points to an HTML form, or an

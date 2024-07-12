@@ -11,15 +11,29 @@ Usage
 >>> selector = Selector(body=html, base_url="https://example.com")
 >>> form = selector.css("form")
 
-You can use :func:`~form2request.form2request` to generate :ref:`form
-submission request data <request>`:
+You can use :func:`~form2request.form2request` to generate form submission
+request data:
 
 >>> from form2request import form2request
->>> form2request(form)
+>>> req = form2request(form)
+>>> req
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
+:func:`~form2request.form2request` does not make requests, but you can use its
+output to build requests with any HTTP client software, e.g. with the requests_
+library:
+
+.. _requests: https://requests.readthedocs.io/en/latest/
+
+.. _requests-example:
+
+>>> import requests
+>>> requests.request(req.method, req.url, headers=req.headers, data=req.body)  # doctest: +SKIP
+<Response [200]>
+
 :func:`~form2request.form2request` supports :ref:`user-defined form data
-<data>` and :ref:`choosing a specific submit button (or none) <click>`.
+<data>`, :ref:`choosing a specific submit button (or none) <click>`, and
+:ref:`overriding form attributes <override>`.
 
 
 .. _form:
@@ -54,8 +68,8 @@ lxml’s :meth:`HtmlElement.xpath <lxml.html.HtmlElement.xpath>`:
     …``, use ``//form[@id="foo"]``.
 
     When using :meth:`Selector.css <parsel.selector.Selector.css>`, ``#<id>``
-    (e.g. ``#foo``) finds by ``id``, and ``[<attribute>=<value>]`` (e.g.
-    ``[name=foo]``) finds by any other attribute.
+    (e.g. ``#foo``) finds by ``id``, and ``[<attribute>="<value>"]`` (e.g.
+    ``[name=foo]`` or ``[name="foo bar"]``) finds by any other attribute.
 
 -   To find a form by index, by order of appearance in the HTML code, use
     ``(//form)[n]``, where ``n`` is a 1-based index. For example, to find the
@@ -123,18 +137,6 @@ To remove a field value, set it to ``None``:
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 
-Handling form attributes
-========================
-
-You can override the method_ and enctype_ attributes of a form:
-
-.. _enctype: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype
-.. _method: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method
-
->>> form2request(form, method="POST", enctype="text/plain")
-Request(url='https://example.com', method='POST', headers=[('Content-Type', 'text/plain')], body=b'foo=bar')
-
-
 .. _click:
 
 Choosing a submit button
@@ -181,25 +183,40 @@ To change that, set ``click`` to the element that should be clicked:
 Request(url='https://example.com?foo=baz', method='GET', headers=[], body=b'')
 
 
+.. _override:
+
+Overriding form attributes
+==========================
+
+You can override the method_ and enctype_ attributes of a form:
+
+.. _enctype: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype
+.. _method: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method
+
+>>> form2request(form, method="POST", enctype="text/plain")
+Request(url='https://example.com', method='POST', headers=[('Content-Type', 'text/plain')], body=b'foo=bar')
+
+
 .. _request:
 
 Using request data
 ==================
 
-:class:`~form2request.Request` is a simple data container that you can use to
-build an actual request object:
+The output of :func:`~form2request.form2request`,
+:class:`~form2request.Request`, is a simple request data container:
 
->>> request_data = form2request(form)
+>>> req = form2request(form)
+>>> req
+Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
-Here are some examples for popular Python libraries and frameworks:
+While :func:`~form2request.form2request` does not make requests, you can use
+its output request data to build an actual request with any HTTP client
+software, like the requests_ library (see an example :ref:`above
+<requests-example>`) or the :doc:`Scrapy <scrapy:index>` web scraping
+framework:
 
->>> from requests import Request
->>> request = Request(request_data.method, request_data.url, headers=request_data.headers, data=request_data.body)
->>> request
-<Request [GET]>
-
+.. _Scrapy: https://docs.scrapy.org/en/latest/
 
 >>> from scrapy import Request
->>> request = Request(request_data.url, method=request_data.method, headers=request_data.headers, body=request_data.body)
->>> request
+>>> Request(req.url, method=req.method, headers=req.headers, body=req.body)
 <GET https://example.com?foo=bar>
