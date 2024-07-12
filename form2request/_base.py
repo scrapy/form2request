@@ -185,7 +185,7 @@ def form2request(
     :class:`parsel.selector.SelectorList` that points to an HTML form, or an
     instance of :class:`lxml.html.FormElement`.
 
-    *data* should be either a dictionary of a list of 2-item tuples indicating
+    *data* should be either a dictionary or a list of 2-item tuples indicating
     the key-value pairs to include in the request as submission data. Keys with
     ``None`` as value exclude matching form fields.
 
