@@ -590,6 +590,30 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
+        # Single-choice select with no options.
+        (
+            "https://example.com",
+            b"""<form><select name="a"></select></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # Single-choice select with no options but with a value.
+        (
+            "https://example.com",
+            b"""<form><select name="a" value="b"></select></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
         # Single-choice select with multiple options. The first one is
         # selected.
         (
@@ -654,6 +678,30 @@ from form2request import Request, form2request
             {},
             Request(
                 "https://example.com?a=b&a=c",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # Multiple-choice select without options.
+        (
+            "https://example.com",
+            b"""<form><select multiple name="a"></select></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # Multiple-choice select without options but with a value.
+        (
+            "https://example.com",
+            b"""<form><select multiple name="a" value="b"></select></form>""",
+            {},
+            Request(
+                "https://example.com",
                 "GET",
                 [],
                 b"",

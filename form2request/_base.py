@@ -149,7 +149,15 @@ def _data(
     )
     values: list[FormdataKVType] = [
         (k, "" if v is None else v)
-        for k, v in ((e.name, e.value) for e in inputs)
+        for k, v in (
+            (
+                # Unset name for selects without options.
+                (None, None)
+                if e.tag == "select" and not e.value_options
+                else (e.name, e.value)
+            )
+            for e in inputs
+        )
         if k and k not in keys
     ]
     items = data.items() if isinstance(data, dict) else data
