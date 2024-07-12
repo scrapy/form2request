@@ -9,11 +9,24 @@ extensions = [
 
 html_theme = "sphinx_rtd_theme"
 
-autodoc_member_order = "groupwise"
-
 intersphinx_disabled_reftypes = []
 intersphinx_mapping = {
     "lxml": ("https://lxml.de/apidoc/", None),
     "parsel": ("https://parsel.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
+    "scrapy": ("https://docs.scrapy.org/en/latest", None),
 }
+
+nitpick_ignore = [
+    *(
+        ("py:class", cls)
+        for cls in (
+            # https://github.com/sphinx-doc/sphinx/issues/11225
+            "FormdataType",
+            "FormElement",
+            "HtmlElement",
+            "Selector",
+            "SelectorList",
+        )
+    ),
+]

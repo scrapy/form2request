@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.12']
-        tox-job: ["pre-commit", "mypy", "docs", "twinecheck"]
+        tox-job: ["pre-commit", "mypy", "docs", "doctest", "twinecheck"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}

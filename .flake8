@@ -1,6 +1,10 @@
 [flake8]
+extend-select = TC, TC1
 ignore =
+max-line-length = 88
 per-file-ignores =
+    # F401: Imported but unused
+    form2request/__init__.py:F401
     # D100-D104: Missing docstring
     docs/conf.py:D100
     tests/__init__.py:D104
