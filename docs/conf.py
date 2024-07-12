@@ -1,6 +1,6 @@
 project = "form2request"
 copyright = "Zyte Group Ltd"
-release = "0.0.0"
+release = "0.1.0"
 
 extensions = [
     "sphinx.ext.autodoc",
