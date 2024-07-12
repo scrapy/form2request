@@ -459,7 +459,7 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        # Unknown methods are replaced with GET, and can override.
+        # Unknown methods are replaced with GET.
         (
             "https://example.com",
             b"""<form method="a"></form>""",
@@ -482,6 +482,9 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
+        # If an unknown method is defined in a submit button and the parent
+        # form has a valid method, the submit button method (GET) still takes
+        # precedence.
         (
             "https://example.com",
             b"""<form method="post"><button formmethod="a" /></form>""",
@@ -493,7 +496,7 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        # Users can override the method value, to workaround scenarios where
+        # Users can override the method value, to work around scenarios where
         # HTML forms have an unsupported method but a supported one is set
         # through JavaScript.
         (
