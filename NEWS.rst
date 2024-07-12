@@ -2,7 +2,7 @@
 Release notes
 =============
 
-0.1.1 (2024-07-DD)
+0.1.1 (2024-07-12)
 ==================
 
 The name of a ``select`` element is now ignored if that ``select`` element has
