@@ -1,6 +1,10 @@
 [flake8]
 extend-select = TC, TC1
 ignore =
+    # D205: 1 blank line required between summary line and description
+    # D400: First line should end with a period
+    # We need longer summary lines, specially since we use Sphinx syntax.
+    D205, D400
 max-line-length = 88
 per-file-ignores =
     # F401: Imported but unused
@@ -8,4 +12,5 @@ per-file-ignores =
     # D100-D104: Missing docstring
     docs/conf.py:D100
     tests/__init__.py:D104
+    tests/test_conversion.py:D100,D103
     tests/test_main.py:D100,D103

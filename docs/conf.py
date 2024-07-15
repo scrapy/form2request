@@ -13,7 +13,9 @@ intersphinx_disabled_reftypes = []
 intersphinx_mapping = {
     "lxml": ("https://lxml.de/apidoc/", None),
     "parsel": ("https://parsel.readthedocs.io/en/stable", None),
+    "poet": ("https://web-poet.readthedocs.io/en/latest/", None),
     "python": ("https://docs.python.org/3", None),
+    "requests": ("https://requests.readthedocs.io/en/latest/", None),
     "scrapy": ("https://docs.scrapy.org/en/latest", None),
 }
 
