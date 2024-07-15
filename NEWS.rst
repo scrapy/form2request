@@ -2,7 +2,7 @@
 Release notes
 =============
 
-0.2.0 (2024-07-DD)
+0.2.0 (2024-07-15)
 ==================
 
 :class:`~form2request.Request` now provides conversion methods for :doc:`Scrapy
