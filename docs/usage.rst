@@ -216,17 +216,17 @@ software.
 :class:`~form2request.Request` also provides conversion methods for common use
 cases:
 
--   :class:`~form2request.Request.to_poet`, for :doc:`web-poet 0.2.0+
-    <poet:index>`:
-
-    >>> request_data.to_poet()
-    HttpRequest(url=RequestUrl('https://example.com?foo=bar'), method='GET', headers=<HttpRequestHeaders()>, body=b'')
-
--   :class:`~form2request.Request.to_requests`, for :doc:`requests 1.0.0+
-    <requests:index>` (see an example :ref:`above <requests-example>`).
-
 -   :class:`~form2request.Request.to_scrapy`, for :doc:`Scrapy 1.1.0+
     <scrapy:index>`:
 
     >>> request_data.to_scrapy(callback=self.parse)  # doctest: +SKIP
     <GET https://example.com?foo=bar>
+
+-   :class:`~form2request.Request.to_requests`, for :doc:`requests 1.0.0+
+    <requests:index>` (see an example :ref:`above <requests-example>`).
+
+-   :class:`~form2request.Request.to_poet`, for :doc:`web-poet 0.2.0+
+    <poet:index>`:
+
+    >>> request_data.to_poet()
+    HttpRequest(url=RequestUrl('https://example.com?foo=bar'), method='GET', headers=<HttpRequestHeaders()>, body=b'')
