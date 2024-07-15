@@ -15,20 +15,20 @@ You can use :func:`~form2request.form2request` to generate form submission
 request data:
 
 >>> from form2request import form2request
->>> req = form2request(form)
->>> req
+>>> request_data = form2request(form)
+>>> request_data
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 :func:`~form2request.form2request` does not make requests, but you can use its
-output to build requests with any HTTP client software, e.g. with the requests_
-library:
-
-.. _requests: https://requests.readthedocs.io/en/latest/
+output to build requests with any HTTP client software. It also provides
+:ref:`conversion methods for common use cases <request>`, e.g. for the
+:doc:`requests <requests:index>` library:
 
 .. _requests-example:
 
 >>> import requests
->>> requests.request(req.method, req.url, headers=req.headers, data=req.body)  # doctest: +SKIP
+>>> request = request_data.to_requests()
+>>> requests.send(request)  # doctest: +SKIP
 <Response [200]>
 
 :func:`~form2request.form2request` supports :ref:`user-defined form data
@@ -205,18 +205,28 @@ Using request data
 The output of :func:`~form2request.form2request`,
 :class:`~form2request.Request`, is a simple request data container:
 
->>> req = form2request(form)
->>> req
+>>> request_data = form2request(form)
+>>> request_data
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
 
 While :func:`~form2request.form2request` does not make requests, you can use
 its output request data to build an actual request with any HTTP client
-software, like the requests_ library (see an example :ref:`above
-<requests-example>`) or the :doc:`Scrapy <scrapy:index>` web scraping
-framework:
+software.
 
-.. _Scrapy: https://docs.scrapy.org/en/latest/
+:class:`~form2request.Request` also provides conversion methods for common use
+cases:
 
->>> from scrapy import Request
->>> Request(req.url, method=req.method, headers=req.headers, body=req.body)
-<GET https://example.com?foo=bar>
+-   :class:`~form2request.Request.to_scrapy`, for :doc:`Scrapy 1.1.0+
+    <scrapy:index>`:
+
+    >>> request_data.to_scrapy(callback=self.parse)  # doctest: +SKIP
+    <GET https://example.com?foo=bar>
+
+-   :class:`~form2request.Request.to_requests`, for :doc:`requests 1.0.0+
+    <requests:index>` (see an example :ref:`above <requests-example>`).
+
+-   :class:`~form2request.Request.to_poet`, for :doc:`web-poet 0.2.0+
+    <poet:index>`:
+
+    >>> request_data.to_poet()
+    HttpRequest(url=RequestUrl('https://example.com?foo=bar'), method='GET', headers=<HttpRequestHeaders()>, body=b'')

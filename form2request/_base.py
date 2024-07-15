@@ -178,6 +178,57 @@ class Request:
     headers: list[tuple[str, str]]
     body: bytes
 
+    def to_poet(self, **kwargs):
+        """Convert the request to :class:`web_poet.HttpRequest
+        <web_poet.page_inputs.http.HttpRequest>`.
+
+        All *kwargs* are passed to :class:`web_poet.HttpRequest
+        <web_poet.page_inputs.http.HttpRequest>` as is.
+        """
+        import web_poet
+
+        return web_poet.HttpRequest(
+            url=self.url,
+            method=self.method,
+            headers=self.headers,
+            body=self.body,
+            **kwargs,
+        )
+
+    def to_requests(self, **kwargs):
+        """Convert the request to :class:`requests.PreparedRequest`.
+
+        All *kwargs* are passed to :class:`requests.Request` as is.
+        """
+        import requests
+
+        request = requests.Request(
+            self.method,
+            self.url,
+            headers=dict(self.headers),
+            data=self.body,
+            **kwargs,
+        )
+        return request.prepare()
+
+    def to_scrapy(self, callback, **kwargs):
+        """Convert the request to :class:`scrapy.Request
+        <scrapy.http.Request>`.
+
+        All *kwargs* are passed to :class:`scrapy.Request
+        <scrapy.http.Request>` as is.
+        """
+        import scrapy  # type: ignore[import-untyped]
+
+        return scrapy.Request(
+            self.url,
+            callback=callback,
+            method=self.method,
+            headers=self.headers,
+            body=self.body,
+            **kwargs,
+        )
+
 
 def form2request(
     form: FormElement | Selector | SelectorList,
