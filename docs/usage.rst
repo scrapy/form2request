@@ -90,7 +90,7 @@ visit parent elements until you reach the form element. For example:
 For some use cases, you can use :doc:`Formasaurus <formasaurus:index>`, a
 ML-based solution that can can automatically find a form of a specified type
 (e.g. a search form), its :ref:`default key-value pairs <data>`, and its
-:ref:`submit button <click>`. It’s :ref:`formasaurus:usage` documentation
+:ref:`submit button <click>`. Its :ref:`formasaurus:usage` documentation
 includes an example featuring form2request.
 
 
