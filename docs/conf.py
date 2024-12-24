@@ -11,6 +11,7 @@ html_theme = "sphinx_rtd_theme"
 
 intersphinx_disabled_reftypes = []
 intersphinx_mapping = {
+    "formasaurus": ("https://formasaurus.readthedocs.io/en/latest/", None),
     "lxml": ("https://lxml.de/apidoc/", None),
     "parsel": ("https://parsel.readthedocs.io/en/stable", None),
     "poet": ("https://web-poet.readthedocs.io/en/latest/", None),
