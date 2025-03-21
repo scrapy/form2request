@@ -1,3 +1,0 @@
-skips:
-- B101  # assert_used, needed for mypy
-exclude_dirs: ['tests']

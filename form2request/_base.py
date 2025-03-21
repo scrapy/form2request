@@ -1,26 +1,35 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    cast,
+)
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
-    from lxml.html import FormElement  # nosec
-    from lxml.html import HtmlElement  # nosec
+    from lxml.html import FormElement, HtmlElement
 
 FormdataVType = Union[str, Iterable[str]]
-FormdataKVType = Tuple[str, FormdataVType]
-FormdataType = Optional[Union[Dict[str, FormdataVType], Iterable[FormdataKVType]]]
+FormdataKVType = tuple[str, FormdataVType]
+FormdataType = Optional[Union[dict[str, FormdataVType], Iterable[FormdataKVType]]]
 
 
-def _parsel_to_lxml(element: HtmlElement | Selector | SelectorList) -> HtmlElement:
+def _parsel_to_lxml(
+    element: HtmlElement | Selector | SelectorList,
+) -> HtmlElement:
     if isinstance(element, SelectorList):
-        element = element[0]
+        return element[0].root
     if isinstance(element, Selector):
-        element = element.root
+        return element.root
     return element
 
 
@@ -79,7 +88,7 @@ def _method(
             method_src = click_element
         else:
             method = form.method
-            assert method is not None  # lxml’s form.method is always filled
+            assert method is not None  # lxml's form.method is always filled
             method_src = form
     method = method.upper()
     if method_src is USER and method not in {"GET", "POST"}:
@@ -97,7 +106,7 @@ def _method(
 
 
 def _click_element(
-    form: FormElement, click: None | bool | HtmlElement
+    form: FormElement, click: bool | HtmlElement | Selector | SelectorList | None
 ) -> HtmlElement | None:
     if click is False:
         return None
@@ -109,18 +118,15 @@ def _click_element(
                 namespaces={"re": "http://exslt.org/regular-expressions"},
             )
         )
-        if not clickables:
-            if click:
-                raise ValueError(
-                    f"No clickable elements found in form {form}. Set click=False or "
-                    f"point it to the element to be clicked."
-                )
-            else:
-                return None
-        click = clickables[0]
-    else:
-        click = _parsel_to_lxml(click)
-    return click
+        if clickables:
+            return clickables[0]
+        if click:
+            raise ValueError(
+                f"No clickable elements found in form {form}. Set click=False or "
+                f"point it to the element to be clicked."
+            )
+        return None
+    return _parsel_to_lxml(click)
 
 
 def _data(
@@ -128,7 +134,7 @@ def _data(
 ) -> list[tuple[str, str]]:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
-        click_data = (name, click_element.get("value"))
+        click_data = (name, cast("str", click_element.get("value")))
         if isinstance(data, dict):
             data = dict(data)
             data[click_data[0]] = click_data[1]
@@ -178,7 +184,7 @@ class Request:
     headers: list[tuple[str, str]]
     body: bytes
 
-    def to_poet(self, **kwargs):
+    def to_poet(self, **kwargs: Any):
         """Convert the request to :class:`web_poet.HttpRequest
         <web_poet.page_inputs.http.HttpRequest>`.
 
@@ -195,7 +201,7 @@ class Request:
             **kwargs,
         )
 
-    def to_requests(self, **kwargs):
+    def to_requests(self, **kwargs: Any):
         """Convert the request to :class:`requests.PreparedRequest`.
 
         All *kwargs* are passed to :class:`requests.Request` as is.
@@ -211,14 +217,14 @@ class Request:
         )
         return request.prepare()
 
-    def to_scrapy(self, callback, **kwargs):
+    def to_scrapy(self, callback: Callable, **kwargs: Any):
         """Convert the request to :class:`scrapy.Request
         <scrapy.http.Request>`.
 
         All *kwargs* are passed to :class:`scrapy.Request
         <scrapy.http.Request>` as is.
         """
-        import scrapy  # type: ignore[import-untyped]
+        import scrapy
 
         return scrapy.Request(
             self.url,
@@ -234,7 +240,7 @@ def form2request(
     form: FormElement | Selector | SelectorList,
     data: FormdataType = None,
     *,
-    click: None | bool | HtmlElement = None,
+    click: bool | HtmlElement | Selector | SelectorList | None = None,
     method: None | str = None,
     enctype: None | str = None,
 ) -> Request:
@@ -272,18 +278,18 @@ def form2request(
 
     *method* and *enctype* may be used to override matching form attributes.
     """
-    form = _parsel_to_lxml(form)
-    click_element = _click_element(form, click)
-    url = _url(form, click_element)
-    method = _method(form, click_element, method)
+    form_el = cast("FormElement", _parsel_to_lxml(form))
+    click_element = _click_element(form_el, click)
+    url = _url(form_el, click_element)
+    method = _method(form_el, click_element, method)
     headers = []
     body = ""
-    data = _data(form, data, click_element)
+    data = _data(form_el, data, click_element)
     if method == "GET":
         url = urlunsplit(urlsplit(url)._replace(query=urlencode(data, doseq=True)))
     else:
         assert method == "POST"
-        enctype = _enctype(form, click_element, enctype)
+        enctype = _enctype(form_el, click_element, enctype)
         if enctype == "text/plain":
             headers = [("Content-Type", "text/plain")]
             body = "\n".join(f"{k}={v}" for k, v in data)

@@ -13,7 +13,7 @@ def fake_scrapy_callback(self, response):
 
 @pytest.mark.parametrize(
     ("request_data", "method", "kwargs", "expected"),
-    (
+    [
         # GET
         *(
             (
@@ -136,7 +136,7 @@ def fake_scrapy_callback(self, response):
                 meta={"foo": "bar"},
             ),
         ),
-    ),
+    ],
 )
 def test_conversion(request_data, method, kwargs, expected):
     actual = getattr(request_data, f"to_{method}")(**kwargs)
