@@ -20,7 +20,7 @@ form2request
 
 .. description starts
 
-``form2request`` is a Python 3.8+ library to build HTTP requests out of HTML
+``form2request`` is a Python 3.9+ library to build HTTP requests out of HTML
 forms.
 
 .. description ends

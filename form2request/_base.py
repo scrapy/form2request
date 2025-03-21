@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -21,8 +19,8 @@ if TYPE_CHECKING:
     from lxml.html import FormElement, HtmlElement
 
 FormdataVType = Union[str, Iterable[str]]
-FormdataKVType = Tuple[str, FormdataVType]
-FormdataType = Optional[Union[Dict[str, FormdataVType], Iterable[FormdataKVType]]]
+FormdataKVType = tuple[str, FormdataVType]
+FormdataType = Optional[Union[dict[str, FormdataVType], Iterable[FormdataKVType]]]
 
 
 def _parsel_to_lxml(
