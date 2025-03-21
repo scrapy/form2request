@@ -40,8 +40,8 @@ form2request = ["py.typed"]
 module = [
     "tests.*",
 ]
-# Allow test functions to be untyped
-disallow_untyped_defs = false
+allow_untyped_defs = true
+check_untyped_defs = true
 
 [tool.ruff.lint]
 extend-select = [
