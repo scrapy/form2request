@@ -7,7 +7,7 @@ from form2request import Request, form2request
 
 @pytest.mark.parametrize(
     ("base_url", "html", "kwargs", "expected"),
-    (
+    [
         # Empty form.
         (
             "https://example.com",
@@ -776,7 +776,7 @@ from form2request import Request, form2request
             {},
             NotImplementedError,
         ),
-    ),
+    ],
 )
 def test_form2request(base_url, html, kwargs, expected):
     root = fromstring(html, base_url=base_url)
@@ -796,7 +796,7 @@ def test_form2request_no_base_url():
     html = "<form></form>"
     root = fromstring(html)
     form = root.xpath("//form")[0]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="has no base_url set"):
         form2request(form)
 
 

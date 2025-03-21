@@ -1,4 +1,6 @@
 /.coverage
 /coverage.xml
+/build/
 /dist/
 /.tox/
+/.idea/

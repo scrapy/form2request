@@ -8,8 +8,7 @@ from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
-    from lxml.html import FormElement  # nosec
-    from lxml.html import HtmlElement  # nosec
+    from lxml.html import FormElement, HtmlElement
 
 FormdataVType = Union[str, Iterable[str]]
 FormdataKVType = Tuple[str, FormdataVType]
@@ -79,7 +78,7 @@ def _method(
             method_src = click_element
         else:
             method = form.method
-            assert method is not None  # lxml’s form.method is always filled
+            assert method is not None  # lxml's form.method is always filled
             method_src = form
     method = method.upper()
     if method_src is USER and method not in {"GET", "POST"}:
@@ -115,8 +114,7 @@ def _click_element(
                     f"No clickable elements found in form {form}. Set click=False or "
                     f"point it to the element to be clicked."
                 )
-            else:
-                return None
+            return None
         click = clickables[0]
     else:
         click = _parsel_to_lxml(click)
