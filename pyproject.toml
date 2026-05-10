@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "form2request"
@@ -8,11 +8,10 @@ version = "0.2.0"
 description = "Build HTTP requests out of HTML forms"
 authors = [{name = "Zyte Group Ltd", email = "info@zyte.com"}]
 readme = "README.rst"
-license = {file = "LICENSE"}
+license = "BSD-3-Clause"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -33,11 +32,16 @@ dependencies = [
 Code = "https://github.com/scrapy/form2request"
 Docs = "https://form2request.readthedocs.io/en/latest/"
 
-[tool.setuptools.package-data]
-form2request = ["py.typed"]
+[tool.hatch.build.targets.sdist]
+include = [
+    "/docs",
+    "/form2request",
+    "/tests",
+    "/NEWS.rst",
+    "/tox.ini",
+]
 
 [tool.bumpversion]
-current_version = "0.2.0"
 commit = true
 tag = true
 tag_name = "{new_version}"
@@ -47,8 +51,10 @@ filename = "docs/conf.py"
 parse = 'version\s*=\s*"(?P<major>\d+)\.(?P<minor>\d+)'
 
 [[tool.bumpversion.files]]
-filename = "pyproject.toml"
-parse = 'version\s*=\s*"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'
+filename = 'NEWS.rst'
+search = "\\(unreleased\\)$"
+replace = "({now:%Y-%m-%d})"
+regex = true
 
 [tool.coverage.run]
 branch = true
