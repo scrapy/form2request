@@ -214,11 +214,9 @@ class Request:
         return request.prepare()
 
     def to_scrapy(self, callback: Callable, **kwargs: Any) -> scrapy.Request:
-        """Convert the request to :class:`scrapy.Request
-        <scrapy.http.Request>`.
+        """Convert the request to :class:`scrapy.Request`.
 
-        All *kwargs* are passed to :class:`scrapy.Request
-        <scrapy.http.Request>` as is.
+        All *kwargs* are passed to :class:`scrapy.Request` as is.
         """
         import scrapy  # noqa: PLC0415
 
