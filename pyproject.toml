@@ -67,12 +67,16 @@ check_untyped_defs = true
 
 [tool.ruff.lint]
 extend-select = [
+    # flake8-builtins
+    "A",
     # flake8-async
     "ASYNC",
     # flake8-bugbear
     "B",
     # flake8-comprehensions
     "C4",
+    # flake8-commas
+    "COM",
     # pydocstyle
     "D",
     # flake8-future-annotations
@@ -119,6 +123,8 @@ extend-select = [
     "T10",
     # flake8-type-checking
     "TC",
+    # flake8-tidy-imports
+    "TID",
     # pyupgrade
     "UP",
     # pycodestyle warnings
@@ -127,6 +133,8 @@ extend-select = [
     "YTT",
 ]
 ignore = [
+    # Trailing comma missing
+    "COM812",
     # 1 blank line required between summary line and description
     "D205",
     # First line should end with a period
@@ -144,6 +152,9 @@ ignore = [
     # Use of `assert` detected
     "S101",
 ]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
 "docs/**" = ["D"]

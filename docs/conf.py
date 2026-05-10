@@ -1,5 +1,5 @@
 project = "form2request"
-copyright = "Zyte Group Ltd"
+project_copyright = "Zyte Group Ltd"
 release = "0.2.0"
 
 extensions = [
