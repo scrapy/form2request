@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from parsel import Selector, SelectorList
@@ -18,9 +11,9 @@ from w3lib.html import strip_html5_whitespace
 if TYPE_CHECKING:
     from lxml.html import FormElement, HtmlElement
 
-FormdataVType = Union[str, Iterable[str]]
-FormdataKVType = tuple[str, FormdataVType]
-FormdataType = Optional[Union[dict[str, FormdataVType], Iterable[FormdataKVType]]]
+FormdataVType: TypeAlias = str | Iterable[str]
+FormdataKVType: TypeAlias = tuple[str, FormdataVType]
+FormdataType: TypeAlias = dict[str, FormdataVType] | Iterable[FormdataKVType] | None
 
 
 def _parsel_to_lxml(

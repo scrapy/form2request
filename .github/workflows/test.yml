@@ -11,16 +11,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - python-version: '3.9'
+        - python-version: '3.10'
           toxenv: min
-        - python-version: '3.9'
+        - python-version: '3.10'
           toxenv: min-extra
-        - python-version: '3.9'
         - python-version: '3.10'
         - python-version: '3.11'
         - python-version: '3.12'
         - python-version: '3.13'
-        - python-version: '3.13'
+        - python-version: '3.14'
+        - python-version: '3.14'
           toxenv: extra
 
     steps:
@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
         tox-job: ["pre-commit", "mypy", "docs", "doctest", "twinecheck"]
     steps:
     - uses: actions/checkout@v4
