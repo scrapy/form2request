@@ -191,7 +191,7 @@ class Request:
         All *kwargs* are passed to :class:`web_poet.HttpRequest
         <web_poet.page_inputs.http.HttpRequest>` as is.
         """
-        import web_poet
+        import web_poet  # noqa: PLC0415
 
         return web_poet.HttpRequest(
             url=self.url,
@@ -206,7 +206,7 @@ class Request:
 
         All *kwargs* are passed to :class:`requests.Request` as is.
         """
-        import requests
+        import requests  # noqa: PLC0415
 
         request = requests.Request(
             self.method,
@@ -224,7 +224,7 @@ class Request:
         All *kwargs* are passed to :class:`scrapy.Request
         <scrapy.http.Request>` as is.
         """
-        import scrapy
+        import scrapy  # noqa: PLC0415
 
         return scrapy.Request(
             self.url,
