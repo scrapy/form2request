@@ -24,7 +24,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "lxml >= 4.6.0",
+    "lxml >= 4.6.4",
     "parsel >= 1.8.1",
     "w3lib >= 1.19.0",
 ]
