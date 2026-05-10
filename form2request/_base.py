@@ -9,6 +9,9 @@ from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
+    import requests
+    import scrapy
+    import web_poet
     from lxml.html import FormElement, HtmlElement
 
 FormdataVType: TypeAlias = str | Iterable[str]
@@ -177,7 +180,7 @@ class Request:
     headers: list[tuple[str, str]]
     body: bytes
 
-    def to_poet(self, **kwargs: Any):
+    def to_poet(self, **kwargs: Any) -> web_poet.HttpRequest:
         """Convert the request to :class:`web_poet.HttpRequest
         <web_poet.page_inputs.http.HttpRequest>`.
 
@@ -194,7 +197,7 @@ class Request:
             **kwargs,
         )
 
-    def to_requests(self, **kwargs: Any):
+    def to_requests(self, **kwargs: Any) -> requests.PreparedRequest:
         """Convert the request to :class:`requests.PreparedRequest`.
 
         All *kwargs* are passed to :class:`requests.Request` as is.
@@ -210,7 +213,7 @@ class Request:
         )
         return request.prepare()
 
-    def to_scrapy(self, callback: Callable, **kwargs: Any):
+    def to_scrapy(self, callback: Callable, **kwargs: Any) -> scrapy.Request:
         """Convert the request to :class:`scrapy.Request
         <scrapy.http.Request>`.
 
