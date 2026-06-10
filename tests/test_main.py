@@ -17,17 +17,16 @@ def _parse_multipart(request):
     msg = email.message_from_bytes(raw)
     if not msg.is_multipart():
         return []
-    parts = []
-    for part in msg.get_payload():
-        parts.append(
-            {
-                "name": part.get_param("name", header="content-disposition"),
-                "filename": part.get_param("filename", header="content-disposition"),
-                "content_type": part.get_content_type(),
-                "content": part.get_payload(decode=True),
-            }
-        )
-    return parts
+    return [
+        {
+            "name": part.get_param("name", header="content-disposition"),
+            "filename": part.get_param("filename", header="content-disposition"),
+            "content_type": part.get_content_type(),
+            "content": part.get_payload(decode=True),
+        }
+        for part in msg.get_payload()
+        if isinstance(part, email.message.Message)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -845,8 +844,18 @@ def test_multipart_text_fields():
     )
     parts = _parse_multipart(request)
     assert parts == [
-        {"name": "a", "filename": None, "content_type": "text/plain", "content": b"hello"},
-        {"name": "b", "filename": None, "content_type": "text/plain", "content": b"world"},
+        {
+            "name": "a",
+            "filename": None,
+            "content_type": "text/plain",
+            "content": b"hello",
+        },
+        {
+            "name": "b",
+            "filename": None,
+            "content_type": "text/plain",
+            "content": b"world",
+        },
     ]
 
 
@@ -855,7 +864,11 @@ def test_multipart_file_field():
         b"""<form enctype="multipart/form-data" method="post">
         <input type="file" name="upload" />
         </form>""",
-        data={"upload": FileField(content=b"file content", filename="test.txt", content_type="text/plain")},
+        data={
+            "upload": FileField(
+                content=b"file content", filename="test.txt", content_type="text/plain"
+            )
+        },
     )
     parts = _parse_multipart(request)
     assert len(parts) == 1

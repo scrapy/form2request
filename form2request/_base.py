@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import (
@@ -11,7 +12,6 @@ from typing import (
     cast,
 )
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
-import uuid
 
 from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
@@ -58,13 +58,12 @@ def _enctype(
                 f"The specified form enctype ({enctype!r}) is not supported "
                 f"for forms with the POST method."
             )
-    elif click_element is not None and (
-        enctype := (click_element.get("formenctype") or "").lower()
-    ):
+    elif (
+        click_element is not None
+        and (enctype := (click_element.get("formenctype") or "").lower())
+    ) or (enctype := (form.get("enctype") or "").lower()):
         pass
-    elif enctype := (form.get("enctype") or "").lower():
-        pass
-    return enctype
+    return enctype or ""
 
 
 def _url(form: FormElement, click_element: HtmlElement | None) -> str:
@@ -196,9 +195,7 @@ def _build_multipart_body(
             parts.append(header + value.content + b"\r\n")
         else:
             header = (
-                f"--{boundary}\r\n"
-                f'Content-Disposition: form-data; name="{name}"\r\n'
-                f"\r\n"
+                f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n'
             ).encode()
             parts.append(header + value.encode() + b"\r\n")
     parts.append(f"--{boundary}--\r\n".encode())
@@ -248,11 +245,9 @@ class Request:
         return request.prepare()
 
     def to_scrapy(self, callback: Callable, **kwargs: Any):
-        """Convert the request to :class:`scrapy.Request
-        <scrapy.http.Request>`.
+        """Convert the request to :class:`scrapy.Request`.
 
-        All *kwargs* are passed to :class:`scrapy.Request
-        <scrapy.http.Request>` as is.
+        All *kwargs* are passed to :class:`scrapy.Request` as is.
         """
         import scrapy
 
