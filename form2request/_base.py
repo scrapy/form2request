@@ -105,8 +105,31 @@ def _method(
     return method
 
 
+def _is_element_disabled(element: HtmlElement) -> bool:
+    """Check if a form element is disabled per the HTML spec.
+
+    An element is disabled if it has the ``disabled`` attribute, or if it is a
+    descendant of a ``fieldset[disabled]`` element and not a descendant of that
+    fieldset's first ``legend`` child.
+    """
+    if element.get("disabled") is not None:
+        return True
+    element_ancestors = set(element.iterancestors())
+    for ancestor in element_ancestors:
+        if ancestor.tag != "fieldset" or ancestor.get("disabled") is None:
+            continue
+        first_legend = next(
+            (child for child in ancestor if child.tag == "legend"), None
+        )
+        if first_legend is None or first_legend not in element_ancestors:
+            return True
+    return False
+
+
 def _click_element(
-    form: FormElement, click: bool | HtmlElement | Selector | SelectorList | None
+    form: FormElement,
+    click: bool | HtmlElement | Selector | SelectorList | None,
+    ignore_disabled: bool,
 ) -> HtmlElement | None:
     if click is False:
         return None
@@ -118,6 +141,8 @@ def _click_element(
                 namespaces={"re": "http://exslt.org/regular-expressions"},
             )
         )
+        if ignore_disabled:
+            clickables = [e for e in clickables if not _is_element_disabled(e)]
         if clickables:
             return clickables[0]
         if click:
@@ -130,7 +155,10 @@ def _click_element(
 
 
 def _data(
-    form: FormElement, data: FormdataType, click_element: HtmlElement | None
+    form: FormElement,
+    data: FormdataType,
+    click_element: HtmlElement | None,
+    ignore_disabled: bool,
 ) -> list[tuple[str, str]]:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
@@ -153,6 +181,8 @@ def _data(
         '  not(re:test(., "^(?:checkbox|radio)$", "i")))]]',
         namespaces={"re": "http://exslt.org/regular-expressions"},
     )
+    if ignore_disabled:
+        inputs = [e for e in inputs if not _is_element_disabled(e)]
     values: list[FormdataKVType] = [
         (k, "" if v is None else v)
         for k, v in (
@@ -243,6 +273,7 @@ def form2request(
     click: bool | HtmlElement | Selector | SelectorList | None = None,
     method: None | str = None,
     enctype: None | str = None,
+    ignore_disabled: bool = True,
 ) -> Request:
     """Return request data for an HTML form submission.
 
@@ -277,14 +308,20 @@ def form2request(
         may be necessary.
 
     *method* and *enctype* may be used to override matching form attributes.
+
+    *ignore_disabled* controls whether disabled form elements are excluded from
+    the request data and from auto-detection of the submit button. It defaults
+    to ``True``, which matches browser behavior. Set it to ``False`` to include
+    disabled elements, which can be useful when fields are enabled dynamically
+    through JavaScript before submission.
     """
     form_el = cast("FormElement", _parsel_to_lxml(form))
-    click_element = _click_element(form_el, click)
+    click_element = _click_element(form_el, click, ignore_disabled)
     url = _url(form_el, click_element)
     method = _method(form_el, click_element, method)
     headers = []
     body = ""
-    data = _data(form_el, data, click_element)
+    data = _data(form_el, data, click_element, ignore_disabled)
     if method == "GET":
         url = urlunsplit(urlsplit(url)._replace(query=urlencode(data, doseq=True)))
     else:
