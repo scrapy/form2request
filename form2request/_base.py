@@ -11,6 +11,7 @@ from typing import (
     cast,
 )
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
+import uuid
 
 from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
@@ -18,7 +19,17 @@ from w3lib.html import strip_html5_whitespace
 if TYPE_CHECKING:
     from lxml.html import FormElement, HtmlElement
 
-FormdataVType = Union[str, Iterable[str]]
+
+@dataclass
+class FileField:
+    """A file upload value for use with multipart/form-data forms."""
+
+    content: bytes
+    filename: str = ""
+    content_type: str = "application/octet-stream"
+
+
+FormdataVType = Union[str, FileField, Iterable[str]]
 FormdataKVType = tuple[str, FormdataVType]
 FormdataType = Optional[Union[dict[str, FormdataVType], Iterable[FormdataKVType]]]
 
@@ -38,7 +49,11 @@ def _enctype(
 ) -> str:
     if enctype:
         enctype = enctype.lower()
-        if enctype not in {"application/x-www-form-urlencoded", "text/plain"}:
+        if enctype not in {
+            "application/x-www-form-urlencoded",
+            "text/plain",
+            "multipart/form-data",
+        }:
             raise ValueError(
                 f"The specified form enctype ({enctype!r}) is not supported "
                 f"for forms with the POST method."
@@ -46,19 +61,9 @@ def _enctype(
     elif click_element is not None and (
         enctype := (click_element.get("formenctype") or "").lower()
     ):
-        if enctype == "multipart/form-data":
-            raise NotImplementedError(
-                f"{click_element} has formenctype set to {enctype!r}, which "
-                f"form2request does not currently support for forms with the "
-                f"POST method."
-            )
-    elif (
-        enctype := (form.get("enctype") or "").lower()
-    ) and enctype == "multipart/form-data":
-        raise NotImplementedError(
-            f"{form} has enctype set to {enctype!r}, which form2request does "
-            f"not currently support for forms with the POST method."
-        )
+        pass
+    elif enctype := (form.get("enctype") or "").lower():
+        pass
     return enctype
 
 
@@ -131,7 +136,7 @@ def _click_element(
 
 def _data(
     form: FormElement, data: FormdataType, click_element: HtmlElement | None
-) -> list[tuple[str, str]]:
+) -> list[tuple[str, str | FileField]]:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
         click_data = (name, cast("str", click_element.get("value")))
@@ -171,8 +176,33 @@ def _data(
     return [
         (k, v)
         for k, vs in values
-        for v in ([vs] if isinstance(vs, (str, bytes)) else vs)
+        for v in ([vs] if isinstance(vs, (str, bytes, FileField)) else vs)
     ]
+
+
+def _build_multipart_body(
+    data: list[tuple[str, str | FileField]], boundary: str
+) -> bytes:
+    parts = []
+    for name, value in data:
+        if isinstance(value, FileField):
+            filename_part = f'; filename="{value.filename}"' if value.filename else ""
+            header = (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="{name}"{filename_part}\r\n'
+                f"Content-Type: {value.content_type}\r\n"
+                f"\r\n"
+            ).encode()
+            parts.append(header + value.content + b"\r\n")
+        else:
+            header = (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="{name}"\r\n'
+                f"\r\n"
+            ).encode()
+            parts.append(header + value.encode() + b"\r\n")
+    parts.append(f"--{boundary}--\r\n".encode())
+    return b"".join(parts)
 
 
 @dataclass
@@ -282,23 +312,33 @@ def form2request(
     click_element = _click_element(form_el, click)
     url = _url(form_el, click_element)
     method = _method(form_el, click_element, method)
-    headers = []
-    body = ""
     data = _data(form_el, data, click_element)
     if method == "GET":
         url = urlunsplit(urlsplit(url)._replace(query=urlencode(data, doseq=True)))
-    else:
-        assert method == "POST"
-        enctype = _enctype(form_el, click_element, enctype)
-        if enctype == "text/plain":
-            headers = [("Content-Type", "text/plain")]
-            body = "\n".join(f"{k}={v}" for k, v in data)
-        else:
-            headers = [("Content-Type", "application/x-www-form-urlencoded")]
-            body = urlencode(data, doseq=True)
+        return Request(url=url, method=method, headers=[], body=b"")
+    assert method == "POST"
+    enctype = _enctype(form_el, click_element, enctype)
+    if enctype == "multipart/form-data":
+        boundary = uuid.uuid4().hex
+        headers = [("Content-Type", f'multipart/form-data; boundary="{boundary}"')]
+        return Request(
+            url=url,
+            method=method,
+            headers=headers,
+            body=_build_multipart_body(data, boundary),
+        )
+    if enctype == "text/plain":
+        body = "\n".join(f"{k}={v}" for k, v in data)
+        return Request(
+            url=url,
+            method=method,
+            headers=[("Content-Type", "text/plain")],
+            body=body.encode(),
+        )
+    body = urlencode(data, doseq=True)
     return Request(
         url=url,
         method=method,
-        headers=headers,
+        headers=[("Content-Type", "application/x-www-form-urlencoded")],
         body=body.encode(),
     )
