@@ -32,9 +32,8 @@ output to build requests with any HTTP client software. It also provides
 <Response [200]>
 
 :func:`~form2request.form2request` supports :ref:`user-defined form data
-<data>`, :ref:`choosing a specific submit button (or none) <click>`, and
-:ref:`overriding form attributes <override>`.
-
+<data>`, :ref:`file uploads <uploads>`, :ref:`choosing a specific submit button
+(or none) <click>`, and :ref:`overriding form attributes <override>`.
 
 .. _form:
 
@@ -93,7 +92,6 @@ ML-based solution that can can automatically find a form of a specified type
 :ref:`submit button <click>`. Its :ref:`formasaurus:usage` documentation
 includes an example featuring form2request.
 
-
 .. _data:
 
 Setting form data
@@ -142,6 +140,46 @@ To remove a field value, set it to ``None``:
 >>> form2request(form, {"foo": None})
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
+.. _uploads:
+
+Uploading files
+===============
+
+Forms that upload files use ``enctype="multipart/form-data"``. Pass a
+:class:`~form2request.FileField` instance as the value for any file input
+field:
+
+>>> from form2request import FileField, form2request
+>>> html = b"""
+... <form enctype="multipart/form-data" method="post">
+...     <input type="text" name="description" />
+...     <input type="file" name="attachment" />
+... </form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+>>> request_data = form2request(form, {
+...     "description": "quarterly report",
+...     "attachment": FileField(
+...         content=b"col1,col2\n1,2\n",
+...         filename="report.csv",
+...         content_type="text/csv",
+...     ),
+... })
+>>> request_data.method
+'POST'
+>>> request_data.url
+'https://example.com'
+>>> request_data.headers[0][1].startswith("multipart/form-data")
+True
+
+The ``filename`` and ``content_type`` arguments of
+:class:`~form2request.FileField` are optional. When omitted, ``filename``
+defaults to an empty string and ``content_type`` defaults to
+``application/octet-stream``.
+
+For non-file fields, :func:`~form2request.form2request` handles encoding
+automatically — regular text fields are sent as plain text parts within the
+multipart body, without needing any special wrapping.
 
 .. _click:
 
@@ -188,7 +226,6 @@ To change that, set ``click`` to the element that should be clicked:
 >>> form2request(form, click=submit_baz)
 Request(url='https://example.com?foo=baz', method='GET', headers=[], body=b'')
 
-
 .. _override:
 
 Overriding form attributes
@@ -201,7 +238,6 @@ You can override the method_ and enctype_ attributes of a form:
 
 >>> form2request(form, method="POST", enctype="text/plain")
 Request(url='https://example.com', method='POST', headers=[('Content-Type', 'text/plain')], body=b'foo=bar')
-
 
 .. _request:
 

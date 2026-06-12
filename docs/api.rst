@@ -7,3 +7,7 @@ API reference
 .. autoclass:: form2request.Request
     :members:
     :undoc-members:
+
+.. autoclass:: form2request.FileField
+    :members:
+    :undoc-members:
