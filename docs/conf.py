@@ -1,5 +1,5 @@
 project = "form2request"
-copyright = "Zyte Group Ltd"
+project_copyright = "Zyte Group Ltd"
 release = "0.2.0"
 
 extensions = [
@@ -30,6 +30,8 @@ nitpick_ignore = [
             "HtmlElement",
             "Selector",
             "SelectorList",
+            # documented there as web_poet.page_inputs.http.HttpRequest, may need :canonical:
+            "web_poet.HttpRequest",
         )
     ),
 ]

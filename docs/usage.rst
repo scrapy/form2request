@@ -258,13 +258,13 @@ software.
 :class:`~form2request.Request` also provides conversion methods for common use
 cases:
 
--   :meth:`~form2request.Request.to_scrapy`, for :doc:`Scrapy 1.1.0+
+-   :meth:`~form2request.Request.to_scrapy`, for :doc:`Scrapy 1.7.1+
     <scrapy:index>`:
 
     >>> request_data.to_scrapy(callback=self.parse)  # doctest: +SKIP
     <GET https://example.com?foo=bar>
 
--   :meth:`~form2request.Request.to_requests`, for :doc:`requests 1.0.0+
+-   :meth:`~form2request.Request.to_requests`, for :doc:`requests 2.8.0+
     <requests:index>` (see an example :ref:`above <requests-example>`).
 
 -   :meth:`~form2request.Request.to_poet`, for :doc:`web-poet 0.2.0+
