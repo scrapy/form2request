@@ -30,6 +30,8 @@ nitpick_ignore = [
             "HtmlElement",
             "Selector",
             "SelectorList",
+            # documented there as web_poet.page_inputs.http.HttpRequest, may need :canonical:
+            "web_poet.HttpRequest",
         )
     ),
 ]
