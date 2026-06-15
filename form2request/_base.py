@@ -1,22 +1,18 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from parsel import Selector, SelectorList
 from w3lib.html import strip_html5_whitespace
 
 if TYPE_CHECKING:
+    import requests
+    import scrapy
+    import web_poet
     from lxml.html import FormElement, HtmlElement
 
 
@@ -29,9 +25,9 @@ class FileField:
     content_type: str = "application/octet-stream"
 
 
-FormdataVType = Union[str, FileField, Iterable[str]]
-FormdataKVType = tuple[str, FormdataVType]
-FormdataType = Optional[Union[dict[str, FormdataVType], Iterable[FormdataKVType]]]
+FormdataVType: TypeAlias = str | FileField | Iterable[str]
+FormdataKVType: TypeAlias = tuple[str, FormdataVType]
+FormdataType: TypeAlias = dict[str, FormdataVType] | Iterable[FormdataKVType] | None
 
 
 def _parsel_to_lxml(
@@ -211,14 +207,14 @@ class Request:
     headers: list[tuple[str, str]]
     body: bytes
 
-    def to_poet(self, **kwargs: Any):
+    def to_poet(self, **kwargs: Any) -> web_poet.HttpRequest:
         """Convert the request to :class:`web_poet.HttpRequest
         <web_poet.page_inputs.http.HttpRequest>`.
 
         All *kwargs* are passed to :class:`web_poet.HttpRequest
         <web_poet.page_inputs.http.HttpRequest>` as is.
         """
-        import web_poet
+        import web_poet  # noqa: PLC0415
 
         return web_poet.HttpRequest(
             url=self.url,
@@ -228,12 +224,12 @@ class Request:
             **kwargs,
         )
 
-    def to_requests(self, **kwargs: Any):
+    def to_requests(self, **kwargs: Any) -> requests.PreparedRequest:
         """Convert the request to :class:`requests.PreparedRequest`.
 
         All *kwargs* are passed to :class:`requests.Request` as is.
         """
-        import requests
+        import requests  # noqa: PLC0415
 
         request = requests.Request(
             self.method,
@@ -244,12 +240,12 @@ class Request:
         )
         return request.prepare()
 
-    def to_scrapy(self, callback: Callable, **kwargs: Any):
+    def to_scrapy(self, callback: Callable, **kwargs: Any) -> scrapy.Request:
         """Convert the request to :class:`scrapy.Request`.
 
         All *kwargs* are passed to :class:`scrapy.Request` as is.
         """
-        import scrapy
+        import scrapy  # noqa: PLC0415
 
         return scrapy.Request(
             self.url,

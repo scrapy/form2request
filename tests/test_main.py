@@ -1,4 +1,5 @@
 import email
+from typing import Any
 
 import pytest
 from lxml.html import fromstring
@@ -7,7 +8,7 @@ from parsel import Selector
 from form2request import FileField, Request, form2request
 
 
-def _parse_multipart(request):
+def _parse_multipart(request: Request) -> list[dict[str, Any]]:
     """Parse a multipart/form-data Request body.
 
     Returns a list of dicts with keys: name, filename, content_type, content.
@@ -818,7 +819,7 @@ def test_form2request_parsel():
     assert form2request(form, click=submit_baz[0].root) == expected
 
 
-def _multipart_request(html, **kwargs):
+def _multipart_request(html: bytes, **kwargs: Any) -> Request:
     root = fromstring(html, base_url="https://example.com")
     form = root.xpath("//form")[0]
     return form2request(form, **kwargs)
