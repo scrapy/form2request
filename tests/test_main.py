@@ -1,8 +1,33 @@
+import email
+from typing import Any
+
 import pytest
 from lxml.html import fromstring
 from parsel import Selector
 
-from form2request import Request, form2request
+from form2request import FileField, Request, form2request
+
+
+def _parse_multipart(request: Request) -> list[dict[str, Any]]:
+    """Parse a multipart/form-data Request body.
+
+    Returns a list of dicts with keys: name, filename, content_type, content.
+    """
+    ct = next(v for k, v in request.headers if k == "Content-Type")
+    raw = f"Content-Type: {ct}\r\n\r\n".encode() + request.body
+    msg = email.message_from_bytes(raw)
+    if not msg.is_multipart():
+        return []
+    return [
+        {
+            "name": part.get_param("name", header="content-disposition"),
+            "filename": part.get_param("filename", header="content-disposition"),
+            "content_type": part.get_content_type(),
+            "content": part.get_payload(decode=True),
+        }
+        for part in msg.get_payload()
+        if isinstance(part, email.message.Message)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -226,14 +251,6 @@ from form2request import Request, form2request
                 "foo",
             )
         ),
-        # multipart/form-data raises a NotImplementedError exception when the
-        # method is POST.
-        (
-            "https://example.com",
-            b"""<form enctype="multipart/form-data" method="post"></form>""",
-            {},
-            NotImplementedError,
-        ),
         # multipart/form-data does work when method is GET (default).
         (
             "https://example.com",
@@ -273,21 +290,8 @@ from form2request import Request, form2request
                 b"",
             ),
         ),
-        (
-            "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded" method="post">
-            <input type="submit" formenctype="multipart/form-data" /></form>""",
-            {},
-            NotImplementedError,
-        ),
         # enctype may be overridden, in which case it raises ValueError for
-        # both unknown and unsupported values when method is POST.
-        (
-            "https://example.com",
-            b"""<form method="post"></form>""",
-            {"enctype": "multipart/form-data"},
-            ValueError,
-        ),
+        # unknown values when method is POST.
         (
             "https://example.com",
             b"""<form method="post"></form>""",
@@ -769,13 +773,6 @@ from form2request import Request, form2request
                 b"a+ /=b+ /\nc+ /=d+ /",
             ),
         ),
-        (
-            "https://example.com",
-            b"""<form enctype="application/x-www-form-urlencoded" method="post">
-            <input type="submit" formenctype="MuLtIpArT/fOrM-dAtA" /></form>""",
-            {},
-            NotImplementedError,
-        ),
     ],
 )
 def test_form2request(base_url, html, kwargs, expected):
@@ -820,3 +817,128 @@ def test_form2request_parsel():
     assert form2request(form, click=submit_baz) == expected
     assert form2request(form, click=submit_baz[0]) == expected
     assert form2request(form, click=submit_baz[0].root) == expected
+
+
+def _multipart_request(html: bytes, **kwargs: Any) -> Request:
+    root = fromstring(html, base_url="https://example.com")
+    form = root.xpath("//form")[0]
+    return form2request(form, **kwargs)
+
+
+def test_multipart_empty_form():
+    request = _multipart_request(
+        b'<form enctype="multipart/form-data" method="post"></form>'
+    )
+    assert request.method == "POST"
+    assert request.url == "https://example.com"
+    ct = next(v for k, v in request.headers if k == "Content-Type")
+    assert ct.startswith("multipart/form-data; boundary=")
+    assert _parse_multipart(request) == []
+
+
+def test_multipart_text_fields():
+    request = _multipart_request(
+        b"""<form enctype="multipart/form-data" method="post">
+        <input name="a" value="hello" />
+        <input name="b" value="world" />
+        </form>"""
+    )
+    parts = _parse_multipart(request)
+    assert parts == [
+        {
+            "name": "a",
+            "filename": None,
+            "content_type": "text/plain",
+            "content": b"hello",
+        },
+        {
+            "name": "b",
+            "filename": None,
+            "content_type": "text/plain",
+            "content": b"world",
+        },
+    ]
+
+
+def test_multipart_file_field():
+    request = _multipart_request(
+        b"""<form enctype="multipart/form-data" method="post">
+        <input type="file" name="upload" />
+        </form>""",
+        data={
+            "upload": FileField(
+                content=b"file content", filename="test.txt", content_type="text/plain"
+            )
+        },
+    )
+    parts = _parse_multipart(request)
+    assert len(parts) == 1
+    assert parts[0]["name"] == "upload"
+    assert parts[0]["filename"] == "test.txt"
+    assert parts[0]["content_type"] == "text/plain"
+    assert parts[0]["content"] == b"file content"
+
+
+def test_multipart_file_field_default_content_type():
+    request = _multipart_request(
+        b'<form enctype="multipart/form-data" method="post"></form>',
+        data={"f": FileField(content=b"\x00\x01\x02", filename="data.bin")},
+    )
+    parts = _parse_multipart(request)
+    assert parts[0]["content_type"] == "application/octet-stream"
+    assert parts[0]["content"] == b"\x00\x01\x02"
+
+
+def test_multipart_mixed_fields():
+    request = _multipart_request(
+        b"""<form enctype="multipart/form-data" method="post">
+        <input name="note" value="hi" />
+        </form>""",
+        data={"attachment": FileField(content=b"data", filename="a.bin")},
+    )
+    parts = _parse_multipart(request)
+    assert len(parts) == 2
+    names = {p["name"] for p in parts}
+    assert names == {"note", "attachment"}
+
+
+def test_multipart_formenctype_button():
+    # formenctype="multipart/form-data" on the submit button triggers multipart.
+    request = _multipart_request(
+        b"""<form enctype="application/x-www-form-urlencoded" method="post">
+        <input name="x" value="y" />
+        <input type="submit" formenctype="multipart/form-data" />
+        </form>"""
+    )
+    ct = next(v for k, v in request.headers if k == "Content-Type")
+    assert ct.startswith("multipart/form-data; boundary=")
+    parts = _parse_multipart(request)
+    assert parts[0]["name"] == "x"
+    assert parts[0]["content"] == b"y"
+
+
+def test_multipart_formenctype_case_insensitive():
+    request = _multipart_request(
+        b"""<form enctype="application/x-www-form-urlencoded" method="post">
+        <input type="submit" formenctype="MuLtIpArT/fOrM-dAtA" />
+        </form>"""
+    )
+    ct = next(v for k, v in request.headers if k == "Content-Type")
+    assert ct.startswith("multipart/form-data; boundary=")
+
+
+def test_multipart_enctype_override():
+    # enctype parameter override to multipart/form-data.
+    request = _multipart_request(
+        b'<form method="post"><input name="k" value="v" /></form>',
+        enctype="multipart/form-data",
+    )
+    ct = next(v for k, v in request.headers if k == "Content-Type")
+    assert ct.startswith("multipart/form-data; boundary=")
+    parts = _parse_multipart(request)
+    assert parts[0] == {
+        "name": "k",
+        "filename": None,
+        "content_type": "text/plain",
+        "content": b"v",
+    }

@@ -2,6 +2,7 @@
 *.egg-info/
 /.coverage
 /coverage.xml
+*.junit.xml
 /build/
 /dist/
 /.tox/
