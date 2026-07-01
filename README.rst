@@ -26,4 +26,4 @@ forms.
 .. description ends
 
 * Documentation: https://form2request.readthedocs.io/en/latest/
-* License: BSD 3-clause
+* License: Apache 2.0
