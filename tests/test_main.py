@@ -544,8 +544,8 @@ def _parse_multipart(request: Request) -> list[dict[str, Any]]:
                 b"",
             ),
         ),
-        # We currently do not support ignoring disabled form elements.
-        pytest.param(
+        # Disabled elements are excluded.
+        (
             "https://example.com",
             b"""<form><input disabled name="a" value="b"></form>""",
             {},
@@ -555,9 +555,8 @@ def _parse_multipart(request: Request) -> list[dict[str, Any]]:
                 [],
                 b"",
             ),
-            marks=pytest.mark.xfail(reason="No disabled support"),
         ),
-        pytest.param(
+        (
             "https://example.com",
             b"""<form><fieldset disabled><input name="a" value="b">
             </fieldset></form>""",
@@ -568,7 +567,81 @@ def _parse_multipart(request: Request) -> list[dict[str, Any]]:
                 [],
                 b"",
             ),
-            marks=pytest.mark.xfail(reason="No disabled support"),
+        ),
+        # Elements inside the first legend of a disabled fieldset are not disabled.
+        (
+            "https://example.com",
+            b"""<form><fieldset disabled><legend><input name="a" value="b">
+            </legend></fieldset></form>""",
+            {},
+            Request(
+                "https://example.com?a=b",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # Elements inside a later legend of a disabled fieldset are disabled.
+        (
+            "https://example.com",
+            b"""<form><fieldset disabled><legend>L1</legend>
+            <legend><input name="a" value="b"></legend></fieldset></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # A disabled submit button is skipped during auto-detection.
+        (
+            "https://example.com",
+            b"""<form><input type="submit" disabled name="a" value="b" /></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # ignore_disabled=False includes disabled elements.
+        (
+            "https://example.com",
+            b"""<form><input disabled name="a" value="b"></form>""",
+            {"ignore_disabled": False},
+            Request(
+                "https://example.com?a=b",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # ignore_disabled=False includes elements in a disabled fieldset.
+        (
+            "https://example.com",
+            b"""<form><fieldset disabled><input name="a" value="b">
+            </fieldset></form>""",
+            {"ignore_disabled": False},
+            Request(
+                "https://example.com?a=b",
+                "GET",
+                [],
+                b"",
+            ),
+        ),
+        # ignore_disabled=False picks up a disabled submit button.
+        (
+            "https://example.com",
+            b"""<form><input type="submit" disabled name="a" value="b" /></form>""",
+            {"ignore_disabled": False},
+            Request(
+                "https://example.com?a=b",
+                "GET",
+                [],
+                b"",
+            ),
         ),
         # Single-choice select with a single option.
         (
