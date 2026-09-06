@@ -134,7 +134,7 @@ def _data(
 ) -> list[tuple[str, str | FileField]]:
     data = data or {}
     if click_element is not None and (name := click_element.get("name")):
-        click_data = (name, cast("str", click_element.get("value")))
+        click_data = (name, click_element.get("value", ""))
         if isinstance(data, dict):
             data = dict(data)
             data[click_data[0]] = click_data[1]
