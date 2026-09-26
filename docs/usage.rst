@@ -128,16 +128,24 @@ Request(url='https://example.com?foo=bar&foo=baz', method='GET', headers=[], bod
 
 Sometimes, you might want to prevent a value from a field from being included
 in the generated request data. For example, because the field is removed or
-disabled through JavaScript, or because the field or a parent element has the
-``disabled`` attribute (currently not supported by form2request):
+disabled through JavaScript:
 
->>> html = b"""<form><input name="foo" value="bar" disabled /></form>"""
+>>> html = b"""<form><input name="foo" value="bar" /></form>"""
 >>> selector = Selector(body=html, base_url="https://example.com")
 >>> form = selector.css("form")
 
 To remove a field value, set it to ``None``:
 
 >>> form2request(form, {"foo": None})
+Request(url='https://example.com', method='GET', headers=[], body=b'')
+
+Fields with the ``disabled`` attribute, or inside a ``<fieldset disabled>``
+element, are excluded automatically, as browsers do:
+
+>>> html = b"""<form><input name="foo" value="bar" disabled /></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+>>> form2request(form)
 Request(url='https://example.com', method='GET', headers=[], body=b'')
 
 .. _uploads:
@@ -239,6 +247,17 @@ You can override the method_ and enctype_ attributes of a form:
 >>> form2request(form, method="POST", enctype="text/plain")
 Request(url='https://example.com', method='POST', headers=[('Content-Type', 'text/plain')], body=b'foo=bar')
 
+You can also set ``ignore_disabled=False`` to include disabled fields and
+buttons in the request. This can be useful when a page uses JavaScript to
+enable fields before submission, and the HTML you are parsing reflects the
+pre-JavaScript state:
+
+>>> html = b"""<form><input name="foo" value="bar" disabled /></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
+>>> form2request(form, ignore_disabled=False)
+Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
+
 .. _request:
 
 Using request data
@@ -247,6 +266,9 @@ Using request data
 The output of :func:`~form2request.form2request`,
 :class:`~form2request.Request`, is a simple request data container:
 
+>>> html = b"""<form><input type="submit" name="foo" value="bar" /></form>"""
+>>> selector = Selector(body=html, base_url="https://example.com")
+>>> form = selector.css("form")
 >>> request_data = form2request(form)
 >>> request_data
 Request(url='https://example.com?foo=bar', method='GET', headers=[], body=b'')
