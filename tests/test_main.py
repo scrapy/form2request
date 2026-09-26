@@ -171,6 +171,18 @@ def _parse_multipart(request: Request) -> list[dict[str, Any]]:
                 b"",
             ),
         ),
+        # A submit button without a value attribute contributes an empty value.
+        (
+            "https://example.com",
+            b"""<form method="post"><button type="submit" name="a">Submit</button></form>""",
+            {},
+            Request(
+                "https://example.com",
+                "POST",
+                [("Content-Type", "application/x-www-form-urlencoded")],
+                b"a=",
+            ),
+        ),
         # You can disable the clicking of any submit button.
         (
             "https://example.com",
